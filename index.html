@@ -12,7 +12,22 @@
     --wood:#e6d4ae; --wood2:#d3ba8a; --zone:#c98a4b; --zone2:#b4773a;
     --bad:#d9534f; --warn:#b26a00; --warnbg:#fdf3e2; --okbg:#eef6f0;
     --obs:#5b5750; --planbg:#fbf9f5; --spacebg:#ffffff;
+    --press:#f1ece2; --warnline:#efdcbb; --warnink:#5a4a2c; --notebg:#eef3f6; --noteline:#d4e2ea; --noteink:#2c4552;
+    --okline:#cfe6d6; --okink:#24452f; --codebg:#efeadf; --onaccent:#ffffff;
+    --wall:#6b6357; --dim:#7d7468; --lab:#2b2620; --lab2:#5d554a; --faint:#8a8172; --hatchbg:#ece8e1; --hatchln:#a49c8f; --obsink:#4a463f; --seam:rgba(92,68,36,.5);
   }
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+    --paper:#1b1916; --ink:#efe9df; --muted:#a89f91; --line:#3a352e; --card:#23201c; --field:#2a2621;
+    --chalk:#4fa3c4; --ref:#e0675a; --leg:#3cc09a; --bad:#e8675f; --warn:#e3a04a; --warnbg:#3a2e1c; --okbg:#1e3226;
+    --obs:#b4ab9d; --planbg:#201d19; --spacebg:#2b2721; --press:#332e28; --warnline:#5a4628; --warnink:#f1dcb8;
+    --notebg:#1d2a31; --noteline:#2f4552; --noteink:#c9e0ec; --okline:#2f5139; --okink:#c8ead2; --codebg:#332e28; --onaccent:#0f1a1f;
+    --wall:#bdb3a4; --dim:#a99f90; --lab:#f3ede3; --lab2:#cfc5b6; --faint:#958b7d; --hatchbg:#34302a; --hatchln:#6a6257; --obsink:#e2d9cb; color-scheme:dark}}
+  :root[data-theme="dark"]{
+    --paper:#1b1916; --ink:#efe9df; --muted:#a89f91; --line:#3a352e; --card:#23201c; --field:#2a2621;
+    --chalk:#4fa3c4; --ref:#e0675a; --leg:#3cc09a; --bad:#e8675f; --warn:#e3a04a; --warnbg:#3a2e1c; --okbg:#1e3226;
+    --obs:#b4ab9d; --planbg:#201d19; --spacebg:#2b2721; --press:#332e28; --warnline:#5a4628; --warnink:#f1dcb8;
+    --notebg:#1d2a31; --noteline:#2f4552; --noteink:#c9e0ec; --okline:#2f5139; --okink:#c8ead2; --codebg:#332e28; --onaccent:#0f1a1f;
+    --wall:#bdb3a4; --dim:#a99f90; --lab:#f3ede3; --lab2:#cfc5b6; --faint:#958b7d; --hatchbg:#34302a; --hatchln:#6a6257; --obsink:#e2d9cb; color-scheme:dark}
   *{box-sizing:border-box} html,body{margin:0}
   body{background:var(--paper);color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -47,8 +62,8 @@
   .hint{font-size:12px;color:var(--muted);margin-top:4px}
   .btn{border:1px solid var(--line);background:var(--field);border-radius:9px;padding:8px 12px;font-size:13px;
     font-weight:600;cursor:pointer;white-space:nowrap}
-  .btn:active{background:#f1ece2}
-  .btn.primary{background:var(--chalk);border-color:var(--chalk);color:#fff}
+  .btn:active{background:var(--press)}
+  .btn.primary{background:var(--chalk);border-color:var(--chalk);color:var(--onaccent)}
   .btn.danger{color:var(--bad)}
   .btn.sm{padding:5px 9px;font-size:12px}
   .btnrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
@@ -61,7 +76,7 @@
   .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--field)}
   .seg button{border:0;background:transparent;padding:8px 11px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted)}
   .seg button+button{border-left:1px solid var(--line)}
-  .seg button.on{background:var(--chalk);color:#fff}
+  .seg button.on{background:var(--chalk);color:var(--onaccent)}
   .toggles{display:flex;gap:12px}
   .mini{display:flex;gap:5px;align-items:center;font-size:12.5px;font-weight:600;color:var(--muted);margin:0;cursor:pointer}
   .mini input{accent-color:var(--chalk)}
@@ -87,10 +102,10 @@
   @media(max-width:520px){.stats3{grid-template-columns:1fr 1fr}}
 
   .warn,.note,.good{display:block;border-radius:10px;padding:9px 12px;font-size:13px;margin-top:8px}
-  .warn{display:flex;gap:9px;background:var(--warnbg);border:1px solid #efdcbb;color:#5a4a2c}
+  .warn{display:flex;gap:9px;background:var(--warnbg);border:1px solid var(--warnline);color:var(--warnink)}
   .warn .ic{flex:0 0 auto;font-weight:800;color:var(--warn)}
-  .note{background:#eef3f6;border:1px solid #d4e2ea;color:#2c4552}
-  .good{background:var(--okbg);border:1px solid #cfe6d6;color:#24452f}
+  .note{background:var(--notebg);border:1px solid var(--noteline);color:var(--noteink)}
+  .good{background:var(--okbg);border:1px solid var(--okline);color:var(--okink)}
 
   /* tabs */
   .tabs{display:flex;gap:4px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px;scrollbar-width:none}
@@ -132,7 +147,7 @@
   details.math{border-top:1px solid var(--line);margin-top:12px;padding-top:10px}
   details.math summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--muted)}
   details.math p,details.math li{font-size:13px;color:var(--muted)}
-  code{background:#efeadf;padding:1px 5px;border-radius:5px;font-size:12.5px}
+  code{background:var(--codebg);padding:1px 5px;border-radius:5px;font-size:12.5px}
   .projlist{display:grid;gap:6px;margin-top:8px}
   .projitem{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--field)}
   .projitem b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -145,7 +160,7 @@
   /* svg classes */
   .pa{fill:var(--wood)} .pb{fill:var(--wood2)} .pz{fill:var(--zone)} .pzb{fill:var(--zone2)} .ps{fill:var(--bad)}
   .cut{opacity:.72}
-  .pc{stroke:rgba(92,68,36,.5);stroke-width:.7;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+  .pc{stroke:var(--seam);stroke-width:.7;vector-effect:non-scaling-stroke;stroke-linejoin:round}
 
   @media print{
     body{background:#fff}
@@ -398,6 +413,7 @@
         <h2>Bestellijst</h2>
         <table class="mat" id="matTable"></table>
         <div class="btnrow"><button class="btn" type="button" id="btnCopy">Bestellijst kopiëren</button></div>
+        <textarea id="copyBox" hidden readonly rows="8" style="width:100%;margin-top:8px;font:13px/1.4 ui-monospace,monospace;border:1px solid var(--line);border-radius:9px;padding:8px;background:var(--field);color:var(--ink)"></textarea>
         <div id="matNotes"></div>
       </div>
     </div>
@@ -749,7 +765,7 @@ function renderPlan(){
   const fs=11.5*pxmm,{a,n,O}=res.fr,pi=res.pi,diag=Math.hypot(W,H)+2*pad;
   const P=p=>`${p[0].toFixed(1)},${p[1].toFixed(1)}`;
   const path=ps=>'M'+ps.map(P).join('L')+'Z';
-  let s=`<defs><pattern id="hatch" patternUnits="userSpaceOnUse" width="${(7*pxmm).toFixed(1)}" height="${(7*pxmm).toFixed(1)}" patternTransform="rotate(45)"><rect width="100%" height="100%" fill="#ece8e1"/><line x1="0" y1="0" x2="0" y2="${(7*pxmm).toFixed(1)}" stroke="#a49c8f" stroke-width="${(1.6*pxmm).toFixed(1)}"/></pattern>
+  let s=`<defs><pattern id="hatch" patternUnits="userSpaceOnUse" width="${(7*pxmm).toFixed(1)}" height="${(7*pxmm).toFixed(1)}" patternTransform="rotate(45)"><rect width="100%" height="100%" fill="var(--hatchbg)"/><line x1="0" y1="0" x2="0" y2="${(7*pxmm).toFixed(1)}" stroke="var(--hatchln)" stroke-width="${(1.6*pxmm).toFixed(1)}"/></pattern>
   <clipPath id="floorclip">${geo.ok.map(S=>`<path d="${path(S.poly)}"/>`).join('')}</clipPath></defs>`;
   s+=geo.ok.map(S=>`<path d="${path(S.poly)}" fill="var(--spacebg)"/>`).join('');
   if(ui.showPlanks){
@@ -763,7 +779,7 @@ function renderPlan(){
   // uitsparingen
   for(const S of geo.ok)for(const ob of S.obs){
     s+=`<path d="${path(ob.poly)}" fill="url(#hatch)" stroke="var(--obs)" stroke-width="1.2" vector-effect="non-scaling-stroke"/>`;
-    const c=centroid(ob.poly);s+=txt(c,ob.o.name||'Uitsparing',fs*0.95,'#4a463f',700);
+    const c=centroid(ob.poly);s+=txt(c,ob.o.name||'Uitsparing',fs*0.95,'var(--obsink)',700);
   }
   // lijnen (binnen de vloer)
   const line=(v,col,w,dash)=>{const p1=plus(plus(O,mul(n,v)),mul(a,-diag)),p2=plus(plus(O,mul(n,v)),mul(a,diag));
@@ -775,9 +791,9 @@ function renderPlan(){
   s+=`</g>`;
   // ruimtecontouren
   for(const S of geo.ok){const sel=S.sp.id===ui.sel;
-    s+=`<path d="${path(S.poly)}" fill="none" stroke="${sel&&ui.mode==='move'?'var(--chalk)':'#6b6357'}" stroke-width="${sel&&ui.mode==='move'?2.6:1.8}" vector-effect="non-scaling-stroke"/>`;}
+    s+=`<path d="${path(S.poly)}" fill="none" stroke="${sel&&ui.mode==='move'?'var(--chalk)':'var(--wall)'}" stroke-width="${sel&&ui.mode==='move'?2.6:1.8}" vector-effect="non-scaling-stroke"/>`;}
   for(const S of geo.ok)for(const e of S.edges)if(e.open)
-    s+=`<line x1="${e.p[0]}" y1="${e.p[1]}" x2="${e.q[0]}" y2="${e.q[1]}" stroke="var(--planbg)" stroke-width="3" vector-effect="non-scaling-stroke"/><line x1="${e.p[0]}" y1="${e.p[1]}" x2="${e.q[0]}" y2="${e.q[1]}" stroke="#a49c8f" stroke-width="1.2" stroke-dasharray="3 4" vector-effect="non-scaling-stroke"/>`;
+    s+=`<line x1="${e.p[0]}" y1="${e.p[1]}" x2="${e.q[0]}" y2="${e.q[1]}" stroke="var(--planbg)" stroke-width="3" vector-effect="non-scaling-stroke"/><line x1="${e.p[0]}" y1="${e.p[1]}" x2="${e.q[0]}" y2="${e.q[1]}" stroke="var(--hatchln)" stroke-width="1.2" stroke-dasharray="3 4" vector-effect="non-scaling-stroke"/>`;
   // referentie & maatvoering
   const R=layoutRefs(res);res.refs=R;
   if(R){
@@ -792,20 +808,20 @@ function renderPlan(){
     for(const S of geo.ok){
       for(const e of S.edges){if(e.len<250)continue;
         const pos=plus(e.mid,mul(e.m,-fs*1.05));let ang=Math.atan2(e.w[1],e.w[0])/D2R;if(ang>90)ang-=180;if(ang<=-90)ang+=180;
-        s+=`<text x="${pos[0].toFixed(1)}" y="${pos[1].toFixed(1)}" font-size="${(fs*0.9).toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="#7d7468" font-weight="600" transform="rotate(${ang.toFixed(2)} ${pos[0].toFixed(1)} ${pos[1].toFixed(1)})">${nl0(e.len)}</text>`;}
+        s+=`<text x="${pos[0].toFixed(1)}" y="${pos[1].toFixed(1)}" font-size="${(fs*0.9).toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="var(--dim)" font-weight="600" transform="rotate(${ang.toFixed(2)} ${pos[0].toFixed(1)} ${pos[1].toFixed(1)})">${nl0(e.len)}</text>`;}
     }
   }
-  for(const S of geo.ok){s+=txt(S.label,S.sp.name||'Ruimte',fs*1.15,'#2b2620',800,-fs*0.6);s+=txt(S.label,nl2(S.net/1e6)+' m²',fs*0.95,'#5d554a',600,fs*0.65);}
+  for(const S of geo.ok){s+=txt(S.label,S.sp.name||'Ruimte',fs*1.15,'var(--lab)',800,-fs*0.6);s+=txt(S.label,nl2(S.net/1e6)+' m²',fs*0.95,'var(--lab2)',600,fs*0.65);}
   // voorzijde + schaal
   const fr=state.front,cx=b.x0+W/2,cy=b.y0+H/2,lab='VOORZIJDE';
   const fpos={boven:[cx,vb[1]+fs*1.3,0],onder:[cx,vb[1]+vb[3]-fs*0.9,0],links:[vb[0]+fs*1.2,cy,-90],rechts:[vb[0]+vb[2]-fs*1.2,cy,90]}[fr];
-  s+=`<text x="${fpos[0].toFixed(1)}" y="${fpos[1].toFixed(1)}" font-size="${(fs*0.95).toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="#8a8172" font-weight="800" letter-spacing="${(2*pxmm).toFixed(1)}" transform="rotate(${fpos[2]} ${fpos[0].toFixed(1)} ${fpos[1].toFixed(1)})">${lab}</text>`;
+  s+=`<text x="${fpos[0].toFixed(1)}" y="${fpos[1].toFixed(1)}" font-size="${(fs*0.95).toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="var(--faint)" font-weight="800" letter-spacing="${(2*pxmm).toFixed(1)}" transform="rotate(${fpos[2]} ${fpos[0].toFixed(1)} ${fpos[1].toFixed(1)})">${lab}</text>`;
   const sbx=vb[0]+fs,sby=vb[1]+vb[3]-fs*0.8;
-  s+=`<rect x="${sbx.toFixed(1)}" y="${(sby-3*pxmm).toFixed(1)}" width="1000" height="${(4*pxmm).toFixed(1)}" fill="#8a8172"/><text x="${(sbx+500).toFixed(1)}" y="${(sby-6*pxmm).toFixed(1)}" font-size="${(fs*0.85).toFixed(1)}" text-anchor="middle" fill="#8a8172" font-weight="700">1 m</text>`;
+  s+=`<rect x="${sbx.toFixed(1)}" y="${(sby-3*pxmm).toFixed(1)}" width="1000" height="${(4*pxmm).toFixed(1)}" fill="var(--faint)"/><text x="${(sbx+500).toFixed(1)}" y="${(sby-6*pxmm).toFixed(1)}" font-size="${(fs*0.85).toFixed(1)}" text-anchor="middle" fill="var(--faint)" font-weight="700">1 m</text>`;
   svg.innerHTML=s;
   svg.className.baseVal='mode-'+ui.mode;
 }
-function txt(p,t,size,col,wt,dy=0){return `<text x="${p[0].toFixed(1)}" y="${(p[1]+dy).toFixed(1)}" font-size="${size.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="${col}" font-weight="${wt}" stroke="#fff" stroke-width="${(size*0.28).toFixed(1)}" paint-order="stroke" stroke-linejoin="round">${esc(t)}</text>`;}
+function txt(p,t,size,col,wt,dy=0){return `<text x="${p[0].toFixed(1)}" y="${(p[1]+dy).toFixed(1)}" font-size="${size.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="${col}" font-weight="${wt}" stroke="var(--planbg)" stroke-width="${(size*0.28).toFixed(1)}" paint-order="stroke" stroke-linejoin="round">${esc(t)}</text>`;}
 
 /* ================= panelen ================= */
 function renderKpis(){
@@ -1161,7 +1177,7 @@ sl.addEventListener('click',e=>{
   if(a==='addObs'){const k=card.querySelector('[data-obspreset]').value,[nm,w,h]=OBS_PRESETS[k];sp.obstacles.push({name:nm,x:0,y:0,w,h});}
   if(a==='delObs')sp.obstacles.splice(+b.dataset.oi,1);
   if(a==='dup'){const c=JSON.parse(JSON.stringify(sp));c.id=uid();c.name=sp.name+' (kopie)';const S=geo.ok.find(S=>S.sp===sp);c.x=num(sp.x)+(S?S.bb.x1-S.bb.x0:1000);state.spaces.push(c);ui.sel=c.id;}
-  if(a==='del'){if(!confirm(`“${sp.name}” verwijderen?`))return;state.spaces=state.spaces.filter(s=>s!==sp);ui.sel=state.spaces[0]?.id||null;}
+  if(a==='del'){if(!b.dataset.sure){b.dataset.sure=1;b.textContent='Zeker? Klik nog eens';setTimeout(()=>{if(b.isConnected){delete b.dataset.sure;b.textContent='Verwijderen';}},3000);return;}state.spaces=state.spaces.filter(s=>s!==sp);ui.sel=state.spaces[0]?.id||null;}
   renderSpaces();schedule();
 });
 $('btnAddSpace').addEventListener('click',()=>{
@@ -1184,16 +1200,18 @@ function renderProjects(){const p=getProjects(),ks=Object.keys(p).sort();
   $('projList').innerHTML=ks.length?ks.map(k=>`<div class="projitem"><b>${esc(k)}</b><span class="hint" style="margin:0">${nl2((p[k]._net||0))} m²</span><button class="btn sm" data-load="${esc(k)}" type="button">Openen</button><button class="btn sm danger" data-delp="${esc(k)}" type="button">×</button></div>`).join(''):`<div class="hint">Nog geen opgeslagen projecten.</div>`;}
 $('projList').addEventListener('click',e=>{const l=e.target.closest('[data-load]'),d=e.target.closest('[data-delp]');const p=getProjects();
   if(l){state=migrate(p[l.dataset.load]);afterLoad();toast('Project geopend');}
-  if(d&&confirm(`Project “${d.dataset.delp}” verwijderen?`)){delete p[d.dataset.delp];setProjects(p);renderProjects();}});
-$('btnSave').addEventListener('click',()=>{const name=(prompt('Naam van het project:',state.name||'')||'').trim();if(!name)return;state.name=name;const p=getProjects();p[name]={...JSON.parse(JSON.stringify(state)),_net:geo.net/1e6};setProjects(p);syncBinds();renderProjects();save();toast('Opgeslagen');});
-$('btnNew').addEventListener('click',()=>{if(!confirm('Nieuw project beginnen? Het huidige blijft bewaard als je het hebt opgeslagen.'))return;state=DEFAULT();afterLoad();});
+  if(d&&!d.dataset.sure){d.dataset.sure=1;d.textContent='Zeker?';return;}
+  if(d){delete p[d.dataset.delp];setProjects(p);renderProjects();}});
+$('btnSave').addEventListener('click',()=>{const name=(state.name||'').trim();if(!name||name==='Nieuw project'){toast('Geef het project eerst een naam (bovenaan de pagina)');$('projName').focus();return;}state.name=name;const p=getProjects();p[name]={...JSON.parse(JSON.stringify(state)),_net:geo.net/1e6};setProjects(p);syncBinds();renderProjects();save();toast('Opgeslagen');});
+$('btnNew').addEventListener('click',e=>{const b=e.currentTarget;if(!b.dataset.sure){b.dataset.sure=1;b.textContent='Zeker? Niet-opgeslagen werk verdwijnt';setTimeout(()=>{delete b.dataset.sure;b.textContent='Nieuw project';},3500);return;}delete b.dataset.sure;b.textContent='Nieuw project';state=DEFAULT();afterLoad();});
 $('btnExport').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(state,null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(state.name||'vloer').replace(/[^\w\- ]+/g,'')+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);});
 $('fileImport').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{try{state=migrate(JSON.parse(t));afterLoad();toast('Project geïmporteerd');}catch(err){toast('Dit bestand kan ik niet lezen');}});e.target.value='';});
 function shareLink(){const s=btoa(unescape(encodeURIComponent(JSON.stringify(state))));const url=location.href.split('#')[0]+'#p='+s;
-  (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(()=>toast('Deel-link gekopieerd'),()=>{prompt('Kopieer deze link:',url);});}
+  (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(()=>toast('Deel-link gekopieerd'),()=>showCopy(url));}
 $('btnShare').addEventListener('click',shareLink);$('btnShare2').addEventListener('click',shareLink);
 $('btnPrint').addEventListener('click',()=>window.print());
-$('btnCopy').addEventListener('click',()=>{(navigator.clipboard?navigator.clipboard.writeText(res.matText):Promise.reject()).then(()=>toast('Bestellijst gekopieerd'),()=>prompt('Kopieer:',res.matText));});
+$('btnCopy').addEventListener('click',()=>{(navigator.clipboard?navigator.clipboard.writeText(res.matText):Promise.reject()).then(()=>toast('Bestellijst gekopieerd'),()=>showCopy(res.matText));});
+function showCopy(t){const el=$('copyBox');el.hidden=false;el.value=t;el.focus();el.select();toast('Kopiëren werd geweigerd — de tekst staat geselecteerd, kopieer hem zelf');}
 function afterLoad(){ui.sel=state.spaces[0]?.id||null;renderSpaces();syncBinds();recompute();renderProjects();}
 
 window.addEventListener('resize',()=>schedule());
