@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Visgraat uitzetten — startbanen & hartlijn</title>
+<style>
+  :root{
+    --paper:#f7f4ee; --ink:#201d18; --muted:#6f675b;
+    --line:#ddd6c8; --card:#fffdf9;
+    --chalk:#1f6f8f; --ref:#c0392b; --leg:#0f8a6a;
+    --wood:#e2cfa8; --zone:#c07c3a;
+    --warn:#b26a00; --warnbg:#fdf3e2;
+    --obs:#5b5750;
+  }
+  *{box-sizing:border-box} html,body{margin:0}
+  body{background:var(--paper);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5;-webkit-text-size-adjust:100%;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
+  .wrap{max-width:760px;margin:0 auto;padding:20px 16px 64px}
+  header{margin:8px 0 20px}
+  .kicker{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  h1{font-size:26px;line-height:1.15;margin:6px 0 4px;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:14px;max-width:54ch}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+  .card h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 12px;font-weight:700}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:520px){.grid{grid-template-columns:1fr}}
+  label{display:block;font-size:13px;font-weight:600;margin-bottom:5px}
+  input[type=number],select{width:100%;padding:11px 12px;font-size:16px;border:1px solid var(--line);
+    border-radius:10px;background:#fff;color:var(--ink);font-variant-numeric:tabular-nums}
+  input:focus,select:focus{outline:2px solid var(--chalk);outline-offset:1px;border-color:var(--chalk)}
+  .row-inline{display:flex;align-items:center;gap:10px;margin-top:6px}
+  .check{display:flex;align-items:center;gap:9px;font-weight:600;font-size:14px;cursor:pointer;user-select:none}
+  .check input{width:20px;height:20px;accent-color:var(--chalk)}
+  .hint{font-size:12px;color:var(--muted);margin-top:5px}
+
+  /* schuifregelaar */
+  .slidewrap{display:flex;align-items:center;gap:12px}
+  input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:6px;border-radius:6px;
+    background:linear-gradient(90deg,var(--line),var(--line));outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;
+    background:var(--chalk);border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.25);cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--chalk);
+    border:3px solid #fff;cursor:pointer}
+  .offsetval{min-width:92px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--chalk)}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;font-size:13px;
+    font-weight:600;cursor:pointer;color:var(--ink)}
+  .btn:active{background:#f1ece2}
+
+  .results{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  @media(max-width:560px){.results{grid-template-columns:1fr 1fr}}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 13px}
+  .stat .lab{font-size:11.5px;color:var(--muted);font-weight:600}
+  .stat .val{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em;margin-top:2px}
+  .stat .val small{font-size:12px;color:var(--muted);font-weight:600}
+  .stat.chalk{border-color:var(--chalk)} .stat.chalk .lab{color:var(--chalk)}
+  .stat.zone{border-color:var(--zone)} .stat.zone .lab{color:var(--zone)}
+  .advice{border-radius:12px;padding:13px 15px;margin-top:12px;font-size:14px}
+  .advice.ok{background:#eef6f0;border:1px solid #cfe6d6}
+  .advice.tip{background:var(--warnbg);border:1px solid #efdcbb}
+  .warns{margin-top:8px}
+  .warn{display:flex;gap:9px;background:var(--warnbg);border:1px solid #efdcbb;color:#5a4a2c;
+    border-radius:10px;padding:10px 12px;font-size:13px;margin-top:8px}
+  .warn .ic{flex:0 0 auto;font-weight:800;color:var(--warn)}
+  .drawwrap{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin:14px 0}
+  svg{display:block;width:100%;height:auto;border-radius:8px;background:#fbf9f5;touch-action:none}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-size:12px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .swatch{width:22px;height:0;border-top-width:3px;border-top-style:solid;display:inline-block}
+  .chip{width:14px;height:14px;border-radius:3px;display:inline-block}
+  details{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
+  summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.03em}
+  details p,details li{font-size:13px;color:var(--muted)}
+  code{background:#efeadf;padding:1px 5px;border-radius:5px;font-size:12.5px}
+  .instr{font-size:14px} .instr li{margin:8px 0}
+  .foot{color:var(--muted);font-size:12px;margin-top:22px;text-align:center}
+  b.mm{font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">Woonbasis · uitzet-assistent</div>
+    <h1>Visgraat uitzetten</h1>
+    <p class="sub">Leg eerst twee banen over de lengte — de rits met de punten op de hartlijn — en vul daarna op naar de zijmuren. Schuif de hartlijn tot het patroon mooi uitkomt bij een gang of obstakel.</p>
+  </header>
+
+  <div class="card">
+    <h2>De ruimte</h2>
+    <div class="grid">
+      <div><label for="W">Breedte ruimte (mm)</label>
+        <input id="W" type="number" inputmode="numeric" value="4000" min="200" step="10">
+        <div class="hint">Dwars op de hartlijn. Hierlangs vul je op.</div></div>
+      <div><label for="Len">Lengte ruimte (mm)</label>
+        <input id="Len" type="number" inputmode="numeric" value="5000" min="200" step="10">
+        <div class="hint">Hierlangs loopt de hartlijn.</div></div>
+    </div>
+    <div style="margin-top:12px">
+      <label class="check"><input id="haaks" type="checkbox" checked> Muren zijn haaks</label>
+      <div class="hint">Meet altijd naar je krijtlijn, niet naar de muur.</div>
+    </div>
+    <div style="margin-top:14px">
+      <label for="voorzijde">Voorzijde van de woning</label>
+      <select id="voorzijde">
+        <option value="boven">Boven in de tekening</option>
+        <option value="onder">Onder in de tekening</option>
+      </select>
+      <div class="hint">Alleen een label op het bovenaanzicht, zodat de tekening op de echte ruimte past.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>De plank</h2>
+    <div class="grid">
+      <div style="grid-column:1/-1">
+        <label for="preset">Kies een maat of vul zelf in</label>
+        <select id="preset">
+          <option value="custom">Eigen maat…</option>
+          <option value="600,120">600 × 120 mm (5:1)</option>
+          <option value="500,100">500 × 100 mm (5:1)</option>
+          <option value="480,120">480 × 120 mm (4:1)</option>
+          <option value="400,100">400 × 100 mm (4:1)</option>
+          <option value="600,100">600 × 100 mm (6:1)</option>
+        </select>
+        <div class="hint">Reken met de <b>werkmaat</b> (dekmaat). Bij verlijmd massief = de nominale maat.</div>
+      </div>
+      <div><label for="L">Werklengte plank (mm)</label>
+        <input id="L" type="number" inputmode="numeric" value="600" min="50" step="1"></div>
+      <div><label for="B">Werkbreedte plank (mm)</label>
+        <input id="B" type="number" inputmode="numeric" value="120" min="10" step="1"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Legkeuze</h2>
+    <label class="check"><input id="voegAan" type="checkbox"> Met voeg (bv. keramisch parket / plavuizen)</label>
+    <div id="voegRow" class="row-inline" style="display:none">
+      <label for="voeg" style="margin:0">Voegbreedte (mm)</label>
+      <input id="voeg" type="number" inputmode="decimal" value="3" min="0" step="0.5" style="max-width:120px">
+    </div>
+    <div style="margin-top:14px">
+      <label for="richting">Legrichting hartlijn</label>
+      <select id="richting">
+        <option value="lang">Langs de langste muur</option>
+        <option value="raam">Naar het raam</option>
+        <option value="eigen">Eigen keuze</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- SCHUIVEN -->
+  <div class="card">
+    <h2>Hartlijn verschuiven</h2>
+    <div class="slidewrap">
+      <input id="shift" type="range" min="-500" max="500" value="0" step="1">
+      <span class="offsetval" id="offVal">midden</span>
+    </div>
+    <div class="hint">Sleep om de hele visgraat op te schuiven — bijvoorbeeld tot een volle plank of nette naad uitkomt bij een gang. De reststroken links/rechts updaten mee.</div>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <button class="btn" id="resetBtn" type="button">Terug naar midden</button>
+      <label class="check" style="font-weight:600"><input id="obsAan" type="checkbox"> Gang / obstakel tonen</label>
+    </div>
+    <div id="obsRow" class="grid" style="display:none;margin-top:10px">
+      <div><label for="obsPos">Positie vanaf zijmuur (mm)</label>
+        <input id="obsPos" type="number" inputmode="numeric" value="0" min="0" step="10"></div>
+      <div><label for="obsW">Breedte gang/obstakel (mm)</label>
+        <input id="obsW" type="number" inputmode="numeric" value="1000" min="10" step="10"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Uitzetten</h2>
+    <div class="results">
+      <div class="stat chalk"><div class="lab">Echte hartlijn vanaf zijmuur</div><div class="val" id="oHart">–</div></div>
+      <div class="stat zone"><div class="lab">Middenzone (2 banen)</div><div class="val" id="oZone">–</div></div>
+      <div class="stat"><div class="lab">Puntritme op leglijn</div><div class="val" id="oRitme">–</div></div>
+      <div class="stat"><div class="lab">Leglijn naast hartlijn</div><div class="val" id="oDelta">–</div></div>
+      <div class="stat"><div class="lab">Reststrook links</div><div class="val" id="oL">–</div></div>
+      <div class="stat"><div class="lab">Reststrook rechts</div><div class="val" id="oR">–</div></div>
+    </div>
+    <div id="advice"></div>
+    <div id="warns" class="warns"></div>
+    <details open>
+      <summary>Zo zet je uit op de vloer</summary>
+      <ol class="instr" id="steps"></ol>
+    </details>
+  </div>
+
+  <div class="card">
+    <h2>Materiaal &amp; snijverlies</h2>
+    <div class="grid">
+      <div><label for="verlies">Snijverlies (%)</label>
+        <input id="verlies" type="number" inputmode="numeric" value="10" min="0" max="40" step="1">
+        <div class="hint">Visgraat geeft meer randverlies dan recht leggen — reken 10–15%. Hergebruik je afsnijranden, dan mag het lager.</div></div>
+      <div><label for="m2pak">m² per pak (optioneel)</label>
+        <input id="m2pak" type="number" inputmode="decimal" value="" min="0" step="0.01" placeholder="bv. 2.5">
+        <div class="hint">Vul in om het aantal pakken te berekenen.</div></div>
+    </div>
+    <div class="results" style="margin-top:12px">
+      <div class="stat"><div class="lab">Netto vloeroppervlak</div><div class="val" id="oNet">–</div></div>
+      <div class="stat"><div class="lab">Incl. verlies — bestellen</div><div class="val" id="oBruto">–</div></div>
+      <div class="stat"><div class="lab">Planken nodig</div><div class="val" id="oPlank">–</div></div>
+      <div class="stat" id="oPakCard" style="display:none"><div class="lab">Pakken nodig</div><div class="val" id="oPak">–</div></div>
+    </div>
+    <div class="hint" style="margin-top:10px">Netto oppervlak en plankaantal zijn exact uit de maten; het snijverlies is de enige aanname.</div>
+  </div>
+
+  <div class="drawwrap">
+    <svg id="draw" viewBox="0 0 600 600" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Bovenaanzicht"></svg>
+    <div class="legend">
+      <span><span class="swatch" style="border-color:var(--chalk)"></span> Echte hartlijn (meten)</span>
+      <span><span class="swatch" style="border-color:var(--leg)"></span> Leglijn (punten)</span>
+      <span><span class="swatch" style="border-color:var(--ref);border-top-style:dashed"></span> Baanranden</span>
+      <span><span class="chip" style="background:var(--zone)"></span> 2 startbanen</span>
+      <span><span class="chip" style="background:var(--wood)"></span> Opvullen</span>
+    </div>
+    <div class="hint" style="margin-top:8px">Tip: je kunt ook in de tekening slepen om de hartlijn te verschuiven.</div>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>Zo klopt de berekening (geen black box)</summary>
+      <p>Nagerekend door de visgraat echt op te bouwen en te controleren dat het gatloos sluit (100% dekking, nul overlap). Met <code>v</code> = voeg:</p>
+      <ul>
+        <li><b>Eén baan breedte</b> <code>= (lengte + v) × √2 ÷ 2</code>. Twee banen samen = middenzone.</li>
+        <li><b>Puntritme op de leglijn</b> <code>= (breedte + v) × √2</code>. Elke zoveel mm valt een punt op de lijn.</li>
+        <li><b>Echte hartlijn</b> ligt <code>breedte ÷ (2·√2)</code> naast de leglijn — het midden van de kopse kant. Je meet en centreert naar de hartlijn; je legt de punten naar de leglijn ernaast. Zo hoef je nooit het midden van een losse plank te zoeken.</li>
+        <li>Bij verschuiven schuift de hele vloer mee; de rits blijft op de hartlijn. De reststroken worden dan links/rechts verschillend.</li>
+      </ul>
+      <p><b>Nog te toetsen:</b> reken de eerste keer één bekende klus na voordat je hierop vertrouwt.</p>
+    </details>
+  </div>
+
+  <p class="foot">V1 · visgraat 90° · rechthoekige ruimte · verlijmd of met voeg</p>
+</div>
+
+<script>
+const S2=Math.SQRT2, $=id=>document.getElementById(id), mm=v=>Math.round(v).toLocaleString('nl-NL');
+let offsetMm=0;   // verschuiving hartlijn t.o.v. midden
+
+const presetSel=$('preset'),voegChk=$('voegAan'),voegRow=$('voegRow'),
+      shift=$('shift'),offVal=$('offVal'),obsChk=$('obsAan'),obsRow=$('obsRow');
+
+presetSel.addEventListener('change',()=>{if(presetSel.value!=='custom'){const[l,b]=presetSel.value.split(',').map(Number);$('L').value=l;$('B').value=b;recompute();}});
+voegChk.addEventListener('change',()=>{voegRow.style.display=voegChk.checked?'flex':'none';recompute();});
+obsChk.addEventListener('change',()=>{obsRow.style.display=obsChk.checked?'grid':'none';recompute();});
+shift.addEventListener('input',()=>{offsetMm=+shift.value;recompute(true);});
+$('resetBtn').addEventListener('click',()=>{offsetMm=0;recompute();});
+['W','Len','L','B','voeg','haaks','richting','obsPos','obsW','voorzijde','verlies','m2pak'].forEach(id=>{
+  $(id).addEventListener('input',()=>{if(id==='L'||id==='B')presetSel.value='custom';recompute();});
+  $(id).addEventListener('change',recompute);});
+
+function recompute(fromSlider){
+  const W=+$('W').value,Len=+$('Len').value,L=+$('L').value,B=+$('B').value;
+  const g=voegChk.checked?(+$('voeg').value||0):0, haaks=$('haaks').checked;
+  if(!(W>0&&Len>0&&L>0&&B>0))return;
+
+  const baan=(L+g)*S2/2, zone=2*baan, ritme=(B+g)*S2, delta=B/(2*S2);
+
+  // schuifgrenzen: middenzone moet in de ruimte blijven
+  const maxOff=Math.max(0,(W/2-baan));
+  if(shift.min!=(-maxOff))shift.min=(-Math.round(maxOff));
+  if(shift.max!=maxOff)shift.max=Math.round(maxOff);
+  offsetMm=Math.max(-maxOff,Math.min(maxOff,offsetMm));
+  if(!fromSlider)shift.value=Math.round(offsetMm);
+  offVal.textContent = Math.abs(offsetMm)<0.5?'midden':(offsetMm>0?'+':'−')+mm(Math.abs(offsetMm))+' mm';
+
+  const hartX=W/2+offsetMm, leglijn=hartX-delta;
+  const richting=$('richting').value;
+  const wand=richting==='raam'?'raamzijde':(richting==='lang'?'langste muur':'gekozen zijmuur');
+
+  const fillL=hartX-baan, fillR=W-hartX-baan;
+  const nL=Math.max(0,Math.floor(fillL/baan)), restL=fillL-nL*baan;
+  const nR=Math.max(0,Math.floor(fillR/baan)), restR=fillR-nR*baan;
+
+  $('oHart').innerHTML=`${mm(hartX)} <small>mm</small>`;
+  $('oZone').innerHTML=`${mm(zone)} <small>mm</small>`;
+  $('oRitme').innerHTML=`${ritme.toFixed(1)} <small>mm</small>`;
+  $('oDelta').innerHTML=`${delta.toFixed(0)} <small>mm</small>`;
+  $('oL').innerHTML=`${mm(Math.max(0,restL))} <small>mm</small>`;
+  $('oR').innerHTML=`${mm(Math.max(0,restR))} <small>mm</small>`;
+
+  const adv=$('advice');
+  if(zone>W){
+    adv.className='advice tip';
+    adv.innerHTML=`<b>De ruimte is smaller dan twee banen.</b> De middenzone (${mm(zone)} mm) past niet in ${mm(W)} mm. Start met één baan of heroverweeg het patroon.`;
+  } else if(Math.abs(offsetMm)<0.5){
+    const drempel=baan/3;
+    adv.className=(restL>=drempel)?'advice ok':'advice tip';
+    adv.innerHTML=`<b>Gecentreerd.</b> Na de middenzone vul je per zijde ${nL} volle ${nL===1?'baan':'banen'}, met een reststrook van <b class="mm">${mm(restL)} mm</b> tegen elke zijmuur (links en rechts gelijk).`;
+  } else {
+    adv.className='advice tip';
+    adv.innerHTML=`<b>Verschoven ${offsetMm>0?'naar rechts':'naar links'} met ${mm(Math.abs(offsetMm))} mm.</b> Reststrook links <b class="mm">${mm(Math.max(0,restL))} mm</b>, rechts <b class="mm">${mm(Math.max(0,restR))} mm</b>. Schuif tot beide stroken je bevallen of tot het patroon mooi uitkomt bij de gang.`;
+  }
+
+  const warns=[];
+  const ratio=L/B,r=Math.round(ratio);
+  if(Math.abs(ratio-r)>0.02)warns.push(`Verhouding lengte:breedte is ${ratio.toFixed(2)} — geen schoon veelvoud. Bij visgraat 90° sluit het alleen naadloos bij een hele verhouding (4:1, 5:1…).`);
+  if(!haaks)warns.push(`Muren staan niet haaks. Deze V1 rekent rechthoekig. Zet je krijtlijnen haaks uit (3‑4‑5) en meet altijd naar de krijtlijn.`);
+  const wEl=$('warns');wEl.innerHTML='';
+  warns.forEach(w=>{const d=document.createElement('div');d.className='warn';d.innerHTML=`<span class="ic">!</span><span>${w}</span>`;wEl.appendChild(d);});
+
+  const steps=[
+    `Meet <b class="mm">${mm(hartX)} mm</b> vanaf de ${wand} en zet over de lengte de <b style="color:var(--chalk)">echte hartlijn</b> (midden kopse kant) — dit is je meet- en centreerlijn.`,
+    `Zet daarnaast, op <b class="mm">${delta.toFixed(0)} mm</b> haaks gemeten, de <b style="color:var(--leg)">leglijn</b> evenwijdig. Hierlangs komen de punten van de visgraat te liggen.`,
+    `Zet baanranden op <b class="mm">${baan.toFixed(1)} mm</b> weerszijden van de leglijn (middenzone ${mm(zone)} mm).`,
+    `Leg de <b>twee startbanen</b>, punten tegen elkaar op de <b style="color:var(--leg)">leglijn</b>. Elke <b class="mm">${ritme.toFixed(1)} mm</b> valt er een punt op — natellen.`,
+    `Ligt de rits recht, dan <b>vul je naar beide zijmuren</b> op. Zaag de randstroken (links ${mm(Math.max(0,restL))} mm, rechts ${mm(Math.max(0,restR))} mm) als laatste.`
+  ];
+  $('steps').innerHTML=steps.map(s=>`<li>${s}</li>`).join('');
+
+  // materiaal & snijverlies
+  const netto=W*Len/1e6;                 // m²
+  const plankM2=L*B/1e6;                  // m² per plank
+  const verlies=Math.max(0,(+$('verlies').value||0))/100;
+  const bruto=netto*(1+verlies);
+  const planken=Math.ceil(bruto/plankM2);
+  const m2pak=+$('m2pak').value||0;
+  const fmt=v=>v.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2});
+  $('oNet').innerHTML=`${fmt(netto)} <small>m²</small>`;
+  $('oBruto').innerHTML=`${fmt(bruto)} <small>m²</small>`;
+  $('oPlank').innerHTML=`${mm(planken)} <small>st</small>`;
+  const pakCard=$('oPakCard');
+  if(m2pak>0){ pakCard.style.display=''; $('oPak').innerHTML=`${mm(Math.ceil(bruto/m2pak))} <small>pak</small>`; }
+  else pakCard.style.display='none';
+
+  drawTopView(W,Len,L,B,g,hartX,baan,leglijn);
+}
+
+function drawTopView(W,Len,L,B,g,hartX,baan,leglijn){
+  const svg=$('draw'),pad=34,maxW=560,maxH=560,sc=Math.min(maxW/W,maxH/Len);
+  const vw=W*sc+pad*2,vh=Len*sc+pad*2;
+  svg.setAttribute('viewBox',`0 0 ${vw} ${vh}`);
+  const X=x=>pad+x*sc, Y=y=>pad+(Len-y)*sc;
+  svg._sc=sc; svg._pad=pad; svg._W=W;
+
+  const Le=L+g,Be=B+g;
+  const t1=[Le-Be,Le+Be],t2=[Be,-Be];
+  const th=135*Math.PI/180,cs=Math.cos(th),sn=Math.sin(th);
+  const rot=(x,y)=>[-(cs*x-sn*y), sn*x+cs*y];   // gespiegeld: kopse-kant-midden aan hartlijn-zijde
+
+  let raw=[];
+  for(let i=-16;i<=16;i++)for(let j=-24;j<=46;j++){
+    const ox=i*t1[0]+j*t2[0],oy=i*t1[1]+j*t2[1];
+    for(const pl of [[[0,0],[L,0],[L,B],[0,B]],[[L,0],[L+B,0],[L+B,L],[L,L]]])
+      raw.push(pl.map(([x,y])=>rot(x+ox,y+oy)));
+  }
+  const xsR=raw.flat().map(p=>Math.round(p[0]*10)/10);
+  const freq={};xsR.forEach(x=>freq[x]=(freq[x]||0)+1);
+  const mxf=Math.max(...Object.values(freq));
+  const apex=Object.keys(freq).filter(x=>freq[x]>mxf*0.6).map(Number);
+  let x0=apex.reduce((a,b)=>Math.abs(b)<Math.abs(a)?b:a,1e9); if(!isFinite(x0))x0=0;
+
+  let out=`<defs><clipPath id="room"><rect x="${X(0)}" y="${Y(Len)}" width="${(W*sc).toFixed(1)}" height="${(Len*sc).toFixed(1)}"/></clipPath></defs><g clip-path="url(#room)">`;
+  raw.forEach(p=>{
+    const q=p.map(([x,y])=>[x-x0+leglijn,y]);
+    if(Math.max(...q.map(v=>v[0]))<-40||Math.min(...q.map(v=>v[0]))>W+40)return;
+    if(Math.max(...q.map(v=>v[1]))<-40||Math.min(...q.map(v=>v[1]))>Len+40)return;
+    const cx=q.reduce((a,b)=>a+b[0],0)/q.length;
+    const col=Math.abs(cx-leglijn)<baan?'var(--zone)':'var(--wood)';
+    out+=`<path d="M${q.map(([x,y])=>`${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join(' L')}Z" fill="${col}" stroke="#fff" stroke-width="0.7"/>`;
+  });
+  out+=`</g>`;
+  // obstakel
+  if(obsChk.checked){
+    const op=+$('obsPos').value||0, ow=+$('obsW').value||0;
+    if(ow>0){
+      out+=`<rect x="${X(op)}" y="${Y(Len)}" width="${(ow*sc).toFixed(1)}" height="${(Len*sc).toFixed(1)}" fill="var(--obs)" opacity="0.16"/>`;
+      out+=`<rect x="${X(op)}" y="${Y(Len)}" width="${(ow*sc).toFixed(1)}" height="${(Len*sc).toFixed(1)}" fill="none" stroke="var(--obs)" stroke-width="1" stroke-dasharray="3 3" opacity="0.6"/>`;
+      out+=`<text x="${X(op+ow/2).toFixed(1)}" y="${(Y(0)-8).toFixed(1)}" text-anchor="middle" font-size="11" fill="var(--obs)" font-weight="700">gang / obstakel</text>`;
+    }
+  }
+  out+=`<rect x="${X(0)}" y="${Y(Len)}" width="${(W*sc).toFixed(1)}" height="${(Len*sc).toFixed(1)}" fill="none" stroke="#8a8172" stroke-width="1.5"/>`;
+  [leglijn-baan,leglijn+baan].forEach(x=>{if(x>1&&x<W-1)
+    out+=`<line x1="${X(x)}" y1="${Y(0)}" x2="${X(x)}" y2="${Y(Len)}" stroke="var(--ref)" stroke-width="1.2" stroke-dasharray="5 5"/>`;});
+  // leglijn (punten) en echte hartlijn (midden kopse kant)
+  if(leglijn>1&&leglijn<W-1)
+    out+=`<line x1="${X(leglijn)}" y1="${Y(0)}" x2="${X(leglijn)}" y2="${Y(Len)}" stroke="var(--leg)" stroke-width="2"/>`;
+  out+=`<line x1="${X(hartX)}" y1="${Y(0)}" x2="${X(hartX)}" y2="${Y(Len)}" stroke="var(--chalk)" stroke-width="2"/>`;
+  out+=`<text x="${X(hartX)}" y="${(Y(Len)+15).toFixed(1)}" text-anchor="middle" font-size="12" fill="var(--chalk)" font-weight="700">${mm(hartX)} mm</text>`;
+  // oriëntatie-labels
+  const voor=$('voorzijde')?$('voorzijde').value:'boven';
+  const cxMid=(pad+W*sc/2).toFixed(1), cyMid=(pad+Len*sc/2).toFixed(1);
+  out+=`<text x="${cxMid}" y="16" text-anchor="middle" font-size="11" fill="#8a8172" font-weight="700" letter-spacing="2">${voor==='boven'?'VOORZIJDE':'ACHTERZIJDE'}</text>`;
+  out+=`<text x="${cxMid}" y="${(vh-8).toFixed(1)}" text-anchor="middle" font-size="11" fill="#8a8172" font-weight="700" letter-spacing="2">${voor==='boven'?'ACHTERZIJDE':'VOORZIJDE'}</text>`;
+  out+=`<text x="13" y="${cyMid}" text-anchor="middle" font-size="10" fill="#8a8172" font-weight="600" transform="rotate(-90 13 ${cyMid})">zijmuur</text>`;
+  out+=`<text x="${(vw-13).toFixed(1)}" y="${cyMid}" text-anchor="middle" font-size="10" fill="#8a8172" font-weight="600" transform="rotate(90 ${(vw-13).toFixed(1)} ${cyMid})">zijmuur</text>`;
+  svg.innerHTML=out;
+}
+
+// slepen in de tekening om te verschuiven
+(function(){
+  const svg=$('draw'); let drag=false;
+  const toX=ev=>{
+    const r=svg.getBoundingClientRect();
+    const cx=(ev.touches?ev.touches[0].clientX:ev.clientX)-r.left;
+    const scale=(svg._W*svg._sc+2*svg._pad)/r.width;      // viewBox px per client px
+    const vbx=cx*scale;                                    // x in viewBox
+    return (vbx-svg._pad)/svg._sc;                         // x in mm
+  };
+  const W=()=>+$('W').value;
+  const start=ev=>{drag=true;move(ev);ev.preventDefault();};
+  const move=ev=>{ if(!drag)return;
+    const xmm=toX(ev); offsetMm=xmm-W()/2; recompute(); ev.preventDefault();};
+  const end=()=>drag=false;
+  svg.addEventListener('mousedown',start); svg.addEventListener('mousemove',move);
+  window.addEventListener('mouseup',end);
+  svg.addEventListener('touchstart',start,{passive:false});
+  svg.addEventListener('touchmove',move,{passive:false});
+  window.addEventListener('touchend',end);
+})();
+
+recompute();
+</script>
+</body>
+</html>

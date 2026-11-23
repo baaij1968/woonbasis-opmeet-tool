@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Woonbasis Vloerplanner</title>
+<style>
+  :root{
+    --paper:#f7f4ee; --ink:#201d18; --muted:#6f675b;
+    --line:#ddd6c8; --card:#fffdf9; --field:#fff;
+    --chalk:#1f6f8f; --ref:#c0392b; --leg:#0f8a6a;
+    --wood:#e6d4ae; --wood2:#d3ba8a; --zone:#c98a4b; --zone2:#b4773a;
+    --bad:#d9534f; --warn:#b26a00; --warnbg:#fdf3e2; --okbg:#eef6f0;
+    --obs:#5b5750; --planbg:#fbf9f5; --spacebg:#ffffff;
+  }
+  *{box-sizing:border-box} html,body{margin:0}
+  body{background:var(--paper);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.45;-webkit-text-size-adjust:100%;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
+  button,input,select{font:inherit;color:inherit}
+  .top{max-width:1360px;margin:0 auto;padding:18px 16px 6px;display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;justify-content:space-between}
+  .kicker{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  h1{font-size:25px;line-height:1.15;margin:4px 0 0;letter-spacing:-.01em}
+  .projname{border:1px dashed transparent;background:transparent;font-size:14px;color:var(--muted);padding:2px 6px;margin-left:-6px;border-radius:6px;max-width:260px}
+  .projname:hover,.projname:focus{border-color:var(--line);background:var(--field);outline:none}
+  .app{max-width:1360px;margin:0 auto;padding:8px 16px 64px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+  .app>section{min-width:0}
+  @media(max-width:480px){.seg button{padding:7px 8px;font-size:12px}.planbar{gap:6px}}
+  @media(min-width:1000px){
+    .app{grid-template-columns:minmax(0,1.2fr) minmax(380px,.8fr);align-items:start}
+    .planpane{position:sticky;top:10px}
+  }
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:0 0 14px}
+  .card h2,.card h3{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 12px;font-weight:700}
+  .card h3,.space h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:16px 0 8px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 12px}
+  @media(max-width:420px){.grid3{grid-template-columns:1fr 1fr}}
+  .full{grid-column:1/-1}
+  label{display:block;font-size:12.5px;font-weight:600;margin-bottom:4px}
+  input[type=number],input[type=text],select{width:100%;padding:9px 10px;font-size:16px;border:1px solid var(--line);
+    border-radius:9px;background:var(--field);font-variant-numeric:tabular-nums;min-width:0}
+  input:focus,select:focus,button:focus-visible{outline:2px solid var(--chalk);outline-offset:1px}
+  .check{display:flex;align-items:center;gap:9px;font-weight:600;font-size:14px;cursor:pointer;user-select:none;margin:0}
+  .check input{width:19px;height:19px;accent-color:var(--chalk);flex:0 0 auto}
+  .hint{font-size:12px;color:var(--muted);margin-top:4px}
+  .btn{border:1px solid var(--line);background:var(--field);border-radius:9px;padding:8px 12px;font-size:13px;
+    font-weight:600;cursor:pointer;white-space:nowrap}
+  .btn:active{background:#f1ece2}
+  .btn.primary{background:var(--chalk);border-color:var(--chalk);color:#fff}
+  .btn.danger{color:var(--bad)}
+  .btn.sm{padding:5px 9px;font-size:12px}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  input[type=range]{width:100%;accent-color:var(--chalk);height:28px}
+  .slider{display:grid;grid-template-columns:1fr 96px;gap:10px;align-items:center}
+
+  /* plan */
+  .plancard{padding:10px}
+  .planbar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:8px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--field)}
+  .seg button{border:0;background:transparent;padding:8px 11px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted)}
+  .seg button+button{border-left:1px solid var(--line)}
+  .seg button.on{background:var(--chalk);color:#fff}
+  .toggles{display:flex;gap:12px}
+  .mini{display:flex;gap:5px;align-items:center;font-size:12.5px;font-weight:600;color:var(--muted);margin:0;cursor:pointer}
+  .mini input{accent-color:var(--chalk)}
+  .modehint{font-size:12.5px;color:var(--muted);margin:0 2px 8px;min-height:18px}
+  .modehint label{display:inline-flex;gap:5px;margin-right:12px;font-weight:600;color:var(--ink)}
+  #plan{display:block;width:100%;height:58vh;border-radius:9px;background:var(--planbg);touch-action:none;cursor:crosshair}
+  #plan.mode-move{cursor:move}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:9px;font-size:12px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:20px;height:0;border-top:3px solid;display:inline-block}
+  .chip{width:13px;height:13px;border-radius:3px;display:inline-block}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+  @media(max-width:640px){.kpis{grid-template-columns:1fr 1fr}}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0}
+  .stat .lab{font-size:11.5px;color:var(--muted);font-weight:600}
+  .stat .val{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em;margin-top:1px;overflow-wrap:anywhere}
+  .stat .val small{font-size:12px;color:var(--muted);font-weight:600}
+  .stat .sub{font-size:11.5px;color:var(--muted);margin-top:1px}
+  .stat.chalk{border-color:var(--chalk)} .stat.chalk .lab{color:var(--chalk)}
+  .stat.bad{border-color:var(--bad)} .stat.bad .lab{color:var(--bad)}
+  .stats3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  @media(max-width:520px){.stats3{grid-template-columns:1fr 1fr}}
+
+  .warn,.note,.good{display:block;border-radius:10px;padding:9px 12px;font-size:13px;margin-top:8px}
+  .warn{display:flex;gap:9px;background:var(--warnbg);border:1px solid #efdcbb;color:#5a4a2c}
+  .warn .ic{flex:0 0 auto;font-weight:800;color:var(--warn)}
+  .note{background:#eef3f6;border:1px solid #d4e2ea;color:#2c4552}
+  .good{background:var(--okbg);border:1px solid #cfe6d6;color:#24452f}
+
+  /* tabs */
+  .tabs{display:flex;gap:4px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{flex:0 0 auto;border:1px solid var(--line);background:var(--field);border-radius:999px;padding:8px 13px;
+    font-size:13px;font-weight:700;color:var(--muted);cursor:pointer}
+  .tabs button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .tabpane{display:none} .tabpane.on{display:block}
+
+  /* spaces */
+  details.space{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:0 0 10px;overflow:hidden}
+  details.space[open]{border-color:var(--chalk)}
+  details.space>summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;gap:10px;align-items:center}
+  details.space>summary::-webkit-details-marker{display:none}
+  details.space>summary::after{content:"▾";margin-left:auto;color:var(--muted);transition:transform .15s}
+  details.space[open]>summary::after{transform:rotate(180deg)}
+  .spbody{padding:0 14px 14px}
+  .sumname{font-weight:700}
+  .sumdim{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .dotc{width:10px;height:10px;border-radius:50%;background:var(--chalk);flex:0 0 auto}
+  .walls{display:grid;gap:6px}
+  .wallrow{display:grid;grid-template-columns:22px 1fr 1fr auto;gap:6px;align-items:center}
+  .wallrow .no{font-size:12px;font-weight:700;color:var(--muted);text-align:center}
+  .wallrow.c{grid-template-columns:22px 1fr 1fr 76px auto}
+  .obsrow{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1fr auto;gap:6px;align-items:end;margin-top:6px}
+  @media(max-width:520px){.obsrow{grid-template-columns:1fr 1fr 1fr auto}.obsrow .on1{grid-column:1/-1}}
+  .obsrow label{font-size:11px;margin-bottom:2px}
+  .x{border:1px solid var(--line);background:var(--field);border-radius:8px;width:34px;height:38px;cursor:pointer;color:var(--bad);font-weight:700}
+  .spinfo{font-size:12.5px;color:var(--muted);margin-top:10px}
+
+  table.mat{width:100%;border-collapse:collapse;font-size:14px}
+  table.mat td{padding:7px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.mat td:last-child{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+  table.mat tr.tot td{border-top:2px solid var(--ink);font-size:15.5px}
+  table.mat td small{color:var(--muted);font-weight:600}
+  ol.steps{padding-left:20px;margin:6px 0 0;font-size:14px}
+  ol.steps li{margin:9px 0}
+  b.mm{font-variant-numeric:tabular-nums;white-space:nowrap}
+  details.math{border-top:1px solid var(--line);margin-top:12px;padding-top:10px}
+  details.math summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--muted)}
+  details.math p,details.math li{font-size:13px;color:var(--muted)}
+  code{background:#efeadf;padding:1px 5px;border-radius:5px;font-size:12.5px}
+  .projlist{display:grid;gap:6px;margin-top:8px}
+  .projitem{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--field)}
+  .projitem b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(30px);background:var(--ink);color:var(--paper);
+    padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;z-index:9;max-width:90vw}
+  .toast.on{opacity:1;transform:translateX(-50%)}
+  .foot{color:var(--muted);font-size:12px;margin-top:18px;text-align:center}
+  #printSheet{display:none}
+
+  /* svg classes */
+  .pa{fill:var(--wood)} .pb{fill:var(--wood2)} .pz{fill:var(--zone)} .pzb{fill:var(--zone2)} .ps{fill:var(--bad)}
+  .cut{opacity:.72}
+  .pc{stroke:rgba(92,68,36,.5);stroke-width:.7;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+
+  @media print{
+    body{background:#fff}
+    .top .btnrow,.ctrl,.planbar,.modehint,#globalWarns,.toast{display:none!important}
+    .app{display:block;padding:0}
+    .planpane{position:static}
+    #plan{height:auto;max-height:none;aspect-ratio:auto;min-height:0;background:#fff}
+    .card{break-inside:avoid;border-color:#bbb}
+    #printSheet{display:block;padding:0 16px}
+    #printSheet h2{font-size:15px;margin:18px 0 6px}
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div>
+    <div class="kicker">Woonbasis · opmeet- &amp; uitzet-assistent</div>
+    <h1>Vloerplanner — visgraat &amp; planken</h1>
+    <input class="projname" id="projName" type="text" aria-label="Projectnaam" placeholder="Projectnaam">
+  </div>
+  <div class="btnrow" style="margin:0">
+    <button class="btn" id="btnShare" type="button">Deel-link kopiëren</button>
+    <button class="btn" id="btnPrint" type="button">Afdrukken / PDF</button>
+  </div>
+</header>
+
+<main class="app">
+  <!-- TEKENING -->
+  <section class="planpane">
+    <div class="card plancard">
+      <div class="planbar">
+        <div class="seg" id="modeSeg" role="tablist" aria-label="Wat doet slepen in de tekening">
+          <button type="button" data-mode="hart" class="on">↔ Hartlijn</button>
+          <button type="button" data-mode="move">✥ Ruimte</button>
+          <button type="button" data-mode="wall">⟂ Muur kiezen</button>
+        </div>
+        <div class="toggles">
+          <label class="mini"><input type="checkbox" id="showPlanks" checked> planken</label>
+          <label class="mini"><input type="checkbox" id="showDims" checked> maten</label>
+        </div>
+      </div>
+      <div class="modehint" id="modeHint"></div>
+      <svg id="plan" role="img" aria-label="Bovenaanzicht van de vloer"></svg>
+      <div class="legend">
+        <span><span class="sw" style="border-color:var(--chalk)"></span>Hartlijn</span>
+        <span><span class="sw" style="border-color:var(--leg)"></span>Puntlijn</span>
+        <span><span class="sw" style="border-color:var(--ref);border-top-style:dashed"></span>Startbanen-rand</span>
+        <span><span class="chip" style="background:var(--zone)"></span>Startbanen</span>
+        <span><span class="chip" style="background:var(--wood)"></span>A</span>
+        <span><span class="chip" style="background:var(--wood2)"></span>B</span>
+        <span><span class="chip" style="background:var(--bad)"></span>Snipper</span>
+      </div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div id="globalWarns"></div>
+  </section>
+
+  <!-- BEDIENING -->
+  <section class="ctrl">
+    <nav class="tabs" id="tabs">
+      <button type="button" data-tab="ruimtes" class="on">1 · Ruimtes</button>
+      <button type="button" data-tab="plank">2 · Plank &amp; patroon</button>
+      <button type="button" data-tab="hartlijn">3 · Uitzetten</button>
+      <button type="button" data-tab="materiaal">4 · Materiaal</button>
+      <button type="button" data-tab="project">Project</button>
+    </nav>
+
+    <!-- RUIMTES -->
+    <div class="tabpane on" id="tab-ruimtes">
+      <div class="card">
+        <h2>Ruimtes</h2>
+        <p class="hint" style="margin-top:-6px">Bouw de vloer op uit ruimtes: woonkamer, gang, keuken, hal… Elke ruimte kan een rechthoek, L-vorm, scheve vierhoek (met diagonalen) of vrije vorm zijn. Het patroon loopt door alle ruimtes heen. Versleep ruimtes in de tekening met <b>✥ Ruimte</b>; ze klikken vast aan elkaar.</p>
+        <div class="btnrow">
+          <select id="addPreset" style="width:auto;flex:1;min-width:150px">
+            <option value="kamer">Kamer (rechthoek)</option>
+            <option value="gang">Gang / hal (smal)</option>
+            <option value="keuken">Keuken (met keukenblok)</option>
+            <option value="L">L-vormige ruimte</option>
+            <option value="quad">Scheve ruimte (diagonalen)</option>
+            <option value="free">Vrije vorm (muur voor muur)</option>
+          </select>
+          <button class="btn primary" id="btnAddSpace" type="button">+ Ruimte</button>
+        </div>
+        <div style="margin-top:12px">
+          <label for="front">Voorzijde van de woning</label>
+          <select id="front" data-bind="front">
+            <option value="boven">Boven in de tekening</option>
+            <option value="onder">Onder in de tekening</option>
+            <option value="links">Links in de tekening</option>
+            <option value="rechts">Rechts in de tekening</option>
+          </select>
+        </div>
+      </div>
+      <div id="spaceList"></div>
+    </div>
+
+    <!-- PLANK & PATROON -->
+    <div class="tabpane" id="tab-plank">
+      <div class="card">
+        <h2>De plank</h2>
+        <div class="grid">
+          <div class="full">
+            <label for="preset">Kies een maat of vul zelf in</label>
+            <select id="preset">
+              <option value="custom">Eigen maat…</option>
+              <optgroup label="Visgraat">
+                <option value="600,120">600 × 120 mm (5:1)</option>
+                <option value="615,123">615 × 123 mm (5:1)</option>
+                <option value="630,126">630 × 126 mm (5:1)</option>
+                <option value="750,150">750 × 150 mm (5:1)</option>
+                <option value="500,100">500 × 100 mm (5:1)</option>
+                <option value="480,120">480 × 120 mm (4:1)</option>
+                <option value="600,100">600 × 100 mm (6:1)</option>
+              </optgroup>
+              <optgroup label="Rechte plank / tegel">
+                <option value="1220,180">1220 × 180 mm plank</option>
+                <option value="1500,230">1500 × 230 mm plank</option>
+                <option value="1830,230">1830 × 230 mm plank</option>
+                <option value="914,152">914 × 152 mm plank</option>
+                <option value="600,600">600 × 600 mm tegel</option>
+              </optgroup>
+            </select>
+            <div class="hint">Reken met de <b>werkmaat</b> (zichtbare maat, zonder tand/groef).</div>
+          </div>
+          <div><label for="pL">Werklengte (mm)</label><input id="pL" type="number" inputmode="decimal" data-bind="plank.L" data-type="num" min="50" step="1"></div>
+          <div><label for="pB">Werkbreedte (mm)</label><input id="pB" type="number" inputmode="decimal" data-bind="plank.B" data-type="num" min="10" step="1"></div>
+          <div class="full"><label class="check"><input type="checkbox" id="voegAan" data-bind="plank.voegAan" data-type="bool"> Met voeg (bv. keramisch parket / plavuizen)</label></div>
+          <div id="voegRow" style="display:none"><label for="pg">Voegbreedte (mm)</label><input id="pg" type="number" inputmode="decimal" data-bind="plank.g" data-type="num" min="0" step="0.5"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Patroon</h2>
+        <div class="grid">
+          <div class="full">
+            <label for="ptype">Legpatroon</label>
+            <select id="ptype" data-bind="pattern.type">
+              <option value="visgraat">Visgraat 90°</option>
+              <option value="recht">Rechte planken / tegels</option>
+            </select>
+          </div>
+          <div id="multRow" class="full">
+            <label for="pmult">Visgraat-variant</label>
+            <select id="pmult" data-bind="pattern.mult" data-type="num">
+              <option value="1">Enkele visgraat</option>
+              <option value="2">Dubbele visgraat (2 planken naast elkaar)</option>
+              <option value="3">Driedubbele visgraat</option>
+            </select>
+          </div>
+          <div id="staggerRow" class="full" style="display:none">
+            <label for="pstag">Verband</label>
+            <select id="pstag" data-bind="pattern.stagger" data-type="num">
+              <option value="0.5">Halfsteens (½ plank verspringen)</option>
+              <option value="0.3333333">⅓-verband</option>
+              <option value="0.25">Trapverband (¼)</option>
+              <option value="0">In lijn (tegels, geen verspringing)</option>
+            </select>
+          </div>
+        </div>
+        <div id="patternInfo" style="margin-top:12px"></div>
+      </div>
+    </div>
+
+    <!-- HARTLIJN / UITZETTEN -->
+    <div class="tabpane" id="tab-hartlijn">
+      <div class="card">
+        <h2>Richting</h2>
+        <div class="btnrow" style="margin-top:0">
+          <button class="btn" type="button" data-angle="90">↕ Verticaal</button>
+          <button class="btn" type="button" data-angle="0">↔ Horizontaal</button>
+          <button class="btn" type="button" data-angle="45">⤢ 45°</button>
+          <button class="btn" type="button" data-angle="135">⤡ 135°</button>
+        </div>
+        <div class="grid" style="margin-top:10px">
+          <div><label for="angle">Hoek (graden)</label><input id="angle" type="number" inputmode="decimal" data-bind="axis.angle" data-type="num" step="0.5"></div>
+          <div style="display:flex;align-items:flex-end"><button class="btn" type="button" id="btnLongest" style="width:100%">Langs langste muur</button></div>
+        </div>
+        <div class="btnrow">
+          <button class="btn" type="button" id="btnPickPar">Tik een muur: evenwijdig</button>
+          <button class="btn" type="button" id="btnPickWin">Tik de raammuur: punten naar het raam</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Hartlijn verschuiven</h2>
+        <label>Dwars (mm vanaf het midden van de vloer)</label>
+        <div class="slider"><input id="offR" type="range" step="1"><input id="offN" type="number" inputmode="decimal" data-bind="axis.off" data-type="num" step="1"></div>
+        <label style="margin-top:8px" id="phaseLab">Langs de lijn (ritme van de punten)</label>
+        <div class="slider"><input id="phR" type="range" step="1" min="0"><input id="phN" type="number" inputmode="decimal" data-bind="axis.phase" data-type="num" step="1"></div>
+        <div class="hint">Of sleep in de tekening met <b>↔ Hartlijn</b>. De lijn klikt vast op het midden van elke ruimte — handig om de rits precies midden in de gang te leggen.</div>
+        <div class="btnrow">
+          <button class="btn" type="button" id="btnCenter">Terug naar midden</button>
+          <select id="optGoal" style="width:auto;flex:1;min-width:170px">
+            <option value="planken">Doel: minste planken &amp; snippers</option>
+            <option value="stroken">Doel: brede, gelijke randstroken</option>
+          </select>
+          <button class="btn primary" type="button" id="btnOpt">✨ Slim optimaliseren</button>
+        </div>
+        <div id="optOut"></div>
+      </div>
+
+      <div class="card">
+        <h2>Uitzetten op de vloer</h2>
+        <div class="stats3" id="uitzetStats"></div>
+        <div id="uitzetAdvice"></div>
+        <ol class="steps" id="steps"></ol>
+        <details class="math">
+          <summary>Zo klopt de berekening (geen black box)</summary>
+          <ul>
+            <li>De vloer wordt <b>echt opgebouwd</b>: elke plank van het patroon wordt geometrisch tegen elke ruimte geknipt (min. keukenblokken, trapgaten…). Wat binnen valt telt; hele planken, zaagstukken en snippers volgen daar exact uit.</li>
+            <li><b>Visgraat:</b> één baan breed <code>(L+v)·√2 ÷ 2</code>, startbanen samen <code>(2L+B+v)÷√2</code>; puntritme <code>(B+v)·√2</code>. Werkt voor elke verhouding L:B.</li>
+            <li><b>Puntlijn</b> ligt <code>(B+v) ÷ (2·√2)</code> naast de hartlijn. Meet en centreer naar de hartlijn, leg de punten tegen de puntlijn.</li>
+            <li><b>Hergebruik:</b> een gezaagde plank levert hooguit twee bruikbare stukken. De tool koppelt per type (A met A, B met B) restjes die samen in één plank passen, inclusief zaagsnede. Dat is een <i>optimistische</i> ondergrens — daarom de reserve.</li>
+            <li><b>Snipper</b> = stuk kleiner dan 6% van een plank, of smaller dan 25 mm / korter dan 60 mm. Lastig te zagen en te verlijmen; schuif de hartlijn tot er zo min mogelijk zijn.</li>
+          </ul>
+        </details>
+      </div>
+    </div>
+
+    <!-- MATERIAAL -->
+    <div class="tabpane" id="tab-materiaal">
+      <div class="card">
+        <h2>Instellingen</h2>
+        <div class="grid">
+          <div class="full">
+            <label for="method">Legmethode</label>
+            <select id="method" data-bind="mat.method">
+              <option value="click">Click (zwevend, met ondervloer)</option>
+              <option value="dryback">Dryback (verlijmd)</option>
+            </select>
+          </div>
+          <div><label for="reserve">Reserve (%)</label><input id="reserve" type="number" inputmode="decimal" data-bind="mat.reserve" data-type="num" min="0" max="40" step="1">
+            <div class="hint">Bovenop de berekende planken: voor zaagfouten en later herstel. 3–7% is gebruikelijk.</div></div>
+          <div><label for="kerf">Zaagsnede (mm)</label><input id="kerf" type="number" inputmode="decimal" data-bind="mat.kerf" data-type="num" min="0" step="0.5"></div>
+          <div class="full"><label class="check"><input type="checkbox" data-bind="mat.reuse" data-type="bool"> Restjes slim hergebruiken</label></div>
+        </div>
+        <h3>Verpakking</h3>
+        <div class="grid">
+          <div><label for="pakS">Planken per pak</label><input id="pakS" type="number" inputmode="numeric" data-bind="mat.pakStuks" data-type="num" min="0" step="1" placeholder="bv. 20"></div>
+          <div><label for="pakM">of m² per pak</label><input id="pakM" type="number" inputmode="decimal" data-bind="mat.pakM2" data-type="num" min="0" step="0.01" placeholder="bv. 1,44"></div>
+          <div class="full"><label class="check"><input type="checkbox" data-bind="mat.abMixed" data-type="bool"> A- en B-planken zitten samen in één pak (half/half)</label></div>
+        </div>
+        <h3>Afwerking</h3>
+        <div class="grid">
+          <div class="full"><label class="check"><input type="checkbox" data-bind="mat.plint" data-type="bool"> Plinten berekenen</label></div>
+          <div><label for="plintLen">Plintlengte per stuk (mm)</label><input id="plintLen" type="number" inputmode="numeric" data-bind="mat.plintLen" data-type="num" min="100" step="10"></div>
+          <div id="lijmRow"><label for="lijm">Lijmverbruik (g/m²)</label><input id="lijm" type="number" inputmode="numeric" data-bind="mat.lijm" data-type="num" min="0" step="10"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Bestellijst</h2>
+        <table class="mat" id="matTable"></table>
+        <div class="btnrow"><button class="btn" type="button" id="btnCopy">Bestellijst kopiëren</button></div>
+        <div id="matNotes"></div>
+      </div>
+    </div>
+
+    <!-- PROJECT -->
+    <div class="tabpane" id="tab-project">
+      <div class="card">
+        <h2>Projecten</h2>
+        <p class="hint" style="margin-top:-6px">Alles wordt automatisch bewaard op dit apparaat. Sla een project op onder een naam om meerdere klussen bij te houden.</p>
+        <div class="btnrow">
+          <button class="btn primary" type="button" id="btnSave">Opslaan als project</button>
+          <button class="btn" type="button" id="btnNew">Nieuw project</button>
+        </div>
+        <div class="projlist" id="projList"></div>
+        <h3>Uitwisselen</h3>
+        <div class="btnrow">
+          <button class="btn" type="button" id="btnExport">Exporteer (.json)</button>
+          <label class="btn" style="margin:0">Importeer (.json)<input type="file" id="fileImport" accept="application/json,.json" hidden></label>
+          <button class="btn" type="button" id="btnShare2">Deel-link kopiëren</button>
+        </div>
+        <div class="hint">Met een deel-link opent een collega of klant precies deze vloer, met alle maten.</div>
+      </div>
+    </div>
+    <p class="foot">V2 · vrije plattegronden · visgraat enkel/dubbel/driedubbel · rechte planken &amp; tegels · echte snij-analyse</p>
+  </section>
+</main>
+<div id="printSheet"></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+'use strict';
+/* ================= helpers ================= */
+const S2=Math.SQRT2, D2R=Math.PI/180;
+const $=id=>document.getElementById(id);
+const nl0=v=>Math.round(v).toLocaleString('nl-NL');
+const nl1=v=>(+v).toLocaleString('nl-NL',{minimumFractionDigits:1,maximumFractionDigits:1});
+const nl2=v=>(+v).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2});
+const num=v=>{const x=parseFloat(String(v).replace(',','.'));return isFinite(x)?x:0;};
+const uid=()=>Math.random().toString(36).slice(2,9);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const dot=(p,q)=>p[0]*q[0]+p[1]*q[1];
+const sub=(p,q)=>[p[0]-q[0],p[1]-q[1]];
+const plus=(p,q)=>[p[0]+q[0],p[1]+q[1]];
+const mul=(p,k)=>[p[0]*k,p[1]*k];
+const vlen=p=>Math.hypot(p[0],p[1]);
+const mod=(a,m)=>((a%m)+m)%m;
+
+function sArea(p){let s=0;for(let i=0,n=p.length;i<n;i++){const a=p[i],b=p[(i+1)%n];s+=a[0]*b[1]-b[0]*a[1];}return s/2;}
+function centroid(p){let A=0,cx=0,cy=0;for(let i=0,n=p.length;i<n;i++){const a=p[i],b=p[(i+1)%n],c=a[0]*b[1]-b[0]*a[1];A+=c;cx+=(a[0]+b[0])*c;cy+=(a[1]+b[1])*c;}
+  if(Math.abs(A)<1e-9){const s=p.reduce((t,q)=>plus(t,q),[0,0]);return mul(s,1/p.length);}return [cx/(3*A),cy/(3*A)];}
+function pip(pt,p){let ins=false;for(let i=0,j=p.length-1;i<p.length;j=i++){const xi=p[i][0],yi=p[i][1],xj=p[j][0],yj=p[j][1];
+  if(((yi>pt[1])!==(yj>pt[1]))&&(pt[0]<(xj-xi)*(pt[1]-yi)/(yj-yi)+xi))ins=!ins;}return ins;}
+function segDist(p,a,b){const ab=sub(b,a),t=Math.max(0,Math.min(1,dot(sub(p,a),ab)/(dot(ab,ab)||1)));return vlen(sub(p,plus(a,mul(ab,t))));}
+function bbox(p){let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;for(const q of p){if(q[0]<x0)x0=q[0];if(q[0]>x1)x1=q[0];if(q[1]<y0)y0=q[1];if(q[1]>y1)y1=q[1];}return {x0,y0,x1,y1};}
+const bbHit=(a,b)=>a.x0<b.x1&&a.x1>b.x0&&a.y0<b.y1&&a.y1>b.y0;
+/* Sutherland–Hodgman: willekeurige (ook niet-convexe) ruimte knippen met een convexe plank. Oppervlak klopt exact. */
+function clipSH(subject,clip){
+  const sg=sArea(clip)>=0?1:-1;let out=subject;
+  for(let i=0,n=clip.length;i<n&&out.length;i++){
+    const A=clip[i],B=clip[(i+1)%n],ex=B[0]-A[0],ey=B[1]-A[1],inp=out;out=[];
+    for(let j=0,m=inp.length;j<m;j++){
+      const P=inp[j],Q=inp[(j+1)%m];
+      const sp=sg*(ex*(P[1]-A[1])-ey*(P[0]-A[0])),sq=sg*(ex*(Q[1]-A[1])-ey*(Q[0]-A[0]));
+      if(sp>=0)out.push(P);
+      if((sp>=0)!==(sq>=0)){const t=sp/(sp-sq);out.push([P[0]+(Q[0]-P[0])*t,P[1]+(Q[1]-P[1])*t]);}
+    }
+  }
+  return out;
+}
+function labelPoint(poly){ // benadering 'pole of inaccessibility'
+  const b=bbox(poly);let best=centroid(poly),bd=-1;
+  if(pip(best,poly)){bd=Math.min(...poly.map((p,i)=>segDist(best,p,poly[(i+1)%poly.length])));}
+  for(let i=1;i<20;i++)for(let j=1;j<20;j++){
+    const q=[b.x0+(b.x1-b.x0)*i/20,b.y0+(b.y1-b.y0)*j/20];if(!pip(q,poly))continue;
+    const d=Math.min(...poly.map((p,k)=>segDist(q,p,poly[(k+1)%poly.length])));if(d>bd*1.15){bd=d;best=q;}}
+  return best;
+}
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('on'),2200);}
+
+/* ================= state ================= */
+const SPACE_DEF=()=>({id:uid(),name:'Ruimte',shape:'rect',w:3000,h:4000,cw:1200,ch:1200,corner:'rb',
+  a:3000,b:4000,c:3000,d:4000,e:5000,f:5000,walls:[],x:0,y:0,rot:0,doors:1,doorW:830,open:false,obstacles:[]});
+const DEFAULT=()=>({v:2,name:'Nieuw project',front:'boven',
+  spaces:[
+    {...SPACE_DEF(),name:'Woonkamer',w:4200,h:5600},
+    {...SPACE_DEF(),name:'Keuken',shape:'L',w:3000,h:3800,cw:1100,ch:1400,corner:'rb',x:4200,y:0,doors:0,open:true,
+      obstacles:[{name:'Keukenblok',x:0,y:0,w:3000,h:620}]}],
+  plank:{L:600,B:120,voegAan:false,g:3},
+  pattern:{type:'visgraat',mult:1,stagger:0.5},
+  axis:{angle:90,off:0,phase:0},
+  mat:{reserve:5,reuse:true,kerf:3,method:'click',pakStuks:0,pakM2:0,abMixed:true,plint:true,plintLen:2400,lijm:350}});
+const OBS_PRESETS={keukenblok:['Keukenblok',3000,620],eiland:['Kookeiland',2400,1000],trap:['Trapgat',900,2600],kolom:['Kolom',300,300],kast:['Inbouwkast',1200,600],douche:['Douchebak',900,900]};
+const LS_CUR='wb-vloerplanner-huidig',LS_PROJ='wb-vloerplanner-projecten';
+
+function migrate(s){const d=DEFAULT();return {...d,...s,plank:{...d.plank,...(s.plank||{})},pattern:{...d.pattern,...(s.pattern||{})},
+  axis:{...d.axis,...(s.axis||{})},mat:{...d.mat,...(s.mat||{})},spaces:(s.spaces||[]).map(sp=>({...SPACE_DEF(),...sp,obstacles:sp.obstacles||[],walls:sp.walls||[]}))};}
+function loadInitial(){
+  try{if(location.hash.startsWith('#p=')){const s=JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(3)))));history.replaceState(null,'',location.pathname+location.search);toast('Project uit deel-link geladen');return migrate(s);}}catch(e){}
+  try{const s=JSON.parse(localStorage.getItem(LS_CUR));if(s&&s.spaces)return migrate(s);}catch(e){}
+  return DEFAULT();
+}
+let state=loadInitial();
+const ui={mode:'hart',wallMode:'par',sel:state.spaces[0]?.id||null,tab:'ruimtes',showPlanks:true,showDims:true};
+let geo=null,res=null,saveT=0;
+function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(LS_CUR,JSON.stringify(state));}catch(e){}},300);}
+
+/* ================= vormen ================= */
+const DIRS=[[0,'→ rechts'],[45,'↗ rechtsboven'],[90,'↑ omhoog'],[135,'↖ linksboven'],[180,'← links'],[225,'↙ linksonder'],[270,'↓ omlaag'],[315,'↘ rechtsonder']];
+function shapeLocal(sp){
+  const info=[],warn=[];let pts=[];const P=v=>Math.max(0,num(v));
+  if(sp.shape==='rect'){const w=P(sp.w),h=P(sp.h);if(w>0&&h>0)pts=[[0,0],[w,0],[w,h],[0,h]];}
+  else if(sp.shape==='L'){
+    const w=P(sp.w),h=P(sp.h),cw=Math.min(P(sp.cw),w-10),ch=Math.min(P(sp.ch),h-10);
+    if(w>0&&h>0){
+      if(cw<=0||ch<=0)pts=[[0,0],[w,0],[w,h],[0,h]];
+      else switch(sp.corner){
+        case 'rt':pts=[[0,0],[w-cw,0],[w-cw,ch],[w,ch],[w,h],[0,h]];break;
+        case 'lb':pts=[[0,0],[w,0],[w,h],[cw,h],[cw,h-ch],[0,h-ch]];break;
+        case 'lt':pts=[[cw,0],[w,0],[w,h],[0,h],[0,ch],[cw,ch]];break;
+        default:pts=[[0,0],[w,0],[w,h-ch],[w-cw,h-ch],[w-cw,h],[0,h]];}
+    }
+  }
+  else if(sp.shape==='quad'){
+    const a=P(sp.a),b=P(sp.b),c=P(sp.c),d=P(sp.d),e=P(sp.e),f=P(sp.f);
+    if(a>0&&b>0&&c>0&&d>0&&e>0){
+      if(e>=a+b||a>=e+b||b>=a+e||e>=c+d||c>=e+d||d>=c+e){warn.push('Deze maten passen niet bij elkaar: de diagonaal is te lang of te kort voor de muren. Meet de diagonaal opnieuw (van hoek linksboven naar rechtsonder).');}
+      else{
+        const cx=(a*a+e*e-b*b)/(2*a),cy=Math.sqrt(Math.max(0,e*e-cx*cx));
+        const l=(d*d-c*c+e*e)/(2*e),hh=Math.sqrt(Math.max(0,d*d-l*l)),ux=cx/e,uy=cy/e;
+        const D1=[l*ux-hh*uy,l*uy+hh*ux],D2=[l*ux+hh*uy,l*uy-hh*ux];
+        const D=(cx*D1[1]-cy*D1[0])>0?D1:D2;
+        pts=[[0,0],[a,0],[cx,cy],D];
+        const ang=i=>{const p=pts[i],q=pts[(i+3)%4],r=pts[(i+1)%4],u=sub(q,p),v=sub(r,p);return Math.acos(Math.max(-1,Math.min(1,dot(u,v)/(vlen(u)*vlen(v)))))/D2R;};
+        const names=['linksboven','rechtsboven','rechtsonder','linksonder'];
+        info.push('Hoeken: '+names.map((n,i)=>`${n} <b>${nl1(ang(i))}°</b>`).join(' · '));
+        const worst=Math.max(...[0,1,2,3].map(i=>Math.abs(ang(i)-90)));
+        if(worst>0.6)warn.push(`Ruimte is niet haaks (tot ${nl1(worst)}° scheef). De tool rekent met de echte vorm — zet je krijtlijnen vanaf de hartlijn, niet vanaf de muur.`);
+        const bd=vlen(sub(D,[a,0]));
+        if(f>0){const df=Math.abs(bd-f);(df>15?warn:info).push(`Controle 2e diagonaal: berekend <b>${nl0(bd)} mm</b>, gemeten ${nl0(f)} mm → verschil ${nl0(df)} mm${df>15?' — meet nog eens na':' ✓'}.`);}
+        else info.push(`Verwachte 2e diagonaal (rechtsboven → linksonder): <b>${nl0(bd)} mm</b>. Meet hem ter controle.`);
+      }
+    }
+  }
+  else if(sp.shape==='free'){
+    let x=0,y=0;pts=[[0,0]];
+    (sp.walls||[]).forEach(w=>{const r=num(w.deg)*D2R,L=P(w.len);x+=L*Math.cos(r);y-=L*Math.sin(r);pts.push([x,y]);});
+    const gap=Math.hypot(x,y);
+    if(gap<1.5)pts.pop();
+    else if(pts.length>=3){
+      const deg=mod(Math.atan2(y,-x)/D2R,360);
+      if(gap<=100)warn.push(`De muren sluiten op <b>${nl0(gap)} mm</b> na niet. Waarschijnlijk een kleine meetfout — de tool trekt de laatste hoek recht. Meet na als het meer dan een paar mm is.`);
+      else info.push(`Laatste muur terug naar het begin (automatisch): <b>${nl0(gap)} mm</b> richting ${nl1(deg)}°.`);
+    }
+  }
+  if(pts.length>=3&&Math.abs(sArea(pts))<1e4)warn.push('Deze ruimte heeft (bijna) geen oppervlak.');
+  return {pts,info,warn};
+}
+function rotPt(p,rot){let [x,y]=p;for(let k=0;k<mod(Math.round(rot/90),4);k++)[x,y]=[-y,x];return [x,y];}
+
+/* ================= geometrie van de hele vloer ================= */
+function buildGeometry(){
+  const spaces=[];let fb={x0:1e18,y0:1e18,x1:-1e18,y1:-1e18},A=0,cx=0,cy=0;
+  for(const sp of state.spaces){
+    const sh=shapeLocal(sp);
+    if(sh.pts.length<3){spaces.push({sp,poly:[],obs:[],info:sh.info,warn:sh.warn.length?sh.warn:['Vul de maten in.'],bad:true,area:0,net:0,perim:0,edges:[]});continue;}
+    const rot=num(sp.rot),pr=sh.pts.map(p=>rotPt(p,rot));
+    const mx=Math.min(...pr.map(p=>p[0])),my=Math.min(...pr.map(p=>p[1]));
+    const T=p=>[p[0]-mx+num(sp.x),p[1]-my+num(sp.y)];
+    const poly=pr.map(T);
+    const warn=[...sh.warn];
+    const obs=(sp.obstacles||[]).filter(o=>num(o.w)>0&&num(o.h)>0).map(o=>{
+      const x=num(o.x),y=num(o.y),w=num(o.w),h=num(o.h);
+      return {o,poly:[[x,y],[x+w,y],[x+w,y+h],[x,y+h]].map(p=>T(rotPt(p,rot)))};});
+    obs.forEach(ob=>{if(ob.poly.some(p=>!pip(plus(mul(sub(p,centroid(ob.poly)),0.98),centroid(ob.poly)),poly)))warn.push(`“${esc(ob.o.name||'Uitsparing')}” valt (deels) buiten de ruimte — controleer de positie.`);});
+    const area=Math.abs(sArea(poly)),obsA=obs.reduce((t,o)=>t+Math.abs(sArea(o.poly)),0);
+    const edges=poly.map((p,i)=>{const q=poly[(i+1)%poly.length],L=vlen(sub(q,p)),w=mul(sub(q,p),1/(L||1));
+      let m=[-w[1],w[0]];const mid=mul(plus(p,q),.5);if(!pip(plus(mid,mul(m,4)),poly))m=mul(m,-1);
+      return {p,q,len:L,w,m,mid,i};}).filter(e=>e.len>0.5);
+    const b=bbox(poly);fb={x0:Math.min(fb.x0,b.x0),y0:Math.min(fb.y0,b.y0),x1:Math.max(fb.x1,b.x1),y1:Math.max(fb.y1,b.y1)};
+    const c=centroid(poly);A+=area;cx+=c[0]*area;cy+=c[1]*area;
+    spaces.push({sp,poly,obs,bb:b,area,obsA,net:area-obsA,perim:edges.reduce((t,e)=>t+e.len,0),edges,info:sh.info,warn,c,label:labelPoint(poly)});
+  }
+  const ok=spaces.filter(s=>!s.bad);
+  const g={spaces,ok,bb:fb,centroid:A>0?[cx/A,cy/A]:[0,0],area:A,net:ok.reduce((t,s)=>t+s.net,0),warns:[]};
+  // gedeelde wanden (openingen) en wanden achter keukenblokken
+  const overlapLen=(e1,e2)=>{if(Math.abs(e1.w[0]*e2.w[1]-e1.w[1]*e2.w[0])>0.02)return 0;
+    if(Math.abs(dot(sub(e2.p,e1.p),[-e1.w[1],e1.w[0]]))>8)return 0;
+    const t0=dot(sub(e2.p,e1.p),e1.w),t1=dot(sub(e2.q,e1.p),e1.w);
+    return Math.max(0,Math.min(e1.len,Math.max(t0,t1))-Math.max(0,Math.min(t0,t1)));};
+  g.shared=0;g.sharedOpen=0;
+  for(let i=0;i<ok.length;i++)for(let j=i+1;j<ok.length;j++){
+    if(!bbHit({x0:ok[i].bb.x0-10,y0:ok[i].bb.y0-10,x1:ok[i].bb.x1+10,y1:ok[i].bb.y1+10},ok[j].bb))continue;
+    let s=0;for(const e1 of ok[i].edges)for(const e2 of ok[j].edges)s+=overlapLen(e1,e2);
+    g.shared+=s;if(ok[i].sp.open||ok[j].sp.open)g.sharedOpen+=s;
+  }
+  g.behindObs=0;
+  for(const S of ok)for(const ob of S.obs){const oe=ob.poly.map((p,i)=>{const q=ob.poly[(i+1)%4],L=vlen(sub(q,p));return {p,q,len:L,w:mul(sub(q,p),1/L)};});
+    for(const e1 of S.edges)for(const e2 of oe)g.behindObs+=overlapLen(e1,e2);}
+  // wanden die (grotendeels) een open doorgang zijn: niet gebruiken als meetmuur
+  for(const S of ok)for(const e of S.edges){let s=0;for(const T of ok){if(T===S||!(S.sp.open||T.sp.open))continue;for(const e2 of T.edges)s+=overlapLen(e,e2);}e.open=s>e.len*0.5;}
+  // overlap-controle (steekproef)
+  if(ok.length>1){let hits=0,N=70;const b=fb;
+    for(let i=0;i<N;i++)for(let j=0;j<N;j++){const q=[b.x0+(b.x1-b.x0)*(i+.5)/N,b.y0+(b.y1-b.y0)*(j+.5)/N];let c=0;for(const S of ok)if(pip(q,S.poly)&&++c>1){hits++;break;}}
+    const ov=hits/(N*N)*(b.x1-b.x0)*(b.y1-b.y0)/1e6;
+    if(ov>0.05)g.warns.push(`Ruimtes overlappen elkaar (ca. ${nl2(ov)} m²). Dat oppervlak telt dan dubbel — schuif ze met ✥ Ruimte tegen elkaar aan.`);}
+  return g;
+}
+
+/* ================= patroon ================= */
+function patternInfo(){
+  const L=Math.max(20,num(state.plank.L)),B=Math.max(5,num(state.plank.B)),g=state.plank.voegAan?Math.max(0,num(state.plank.g)):0;
+  if(state.pattern.type==='visgraat'){
+    const m=Math.max(1,Math.min(3,Math.round(num(state.pattern.mult))||1)),Bu=m*B+(m-1)*g,Le=L+g,Bue=Bu+g;
+    return {kind:'visgraat',L,B,g,m,Bu,Le,Bue,tu:Bue*S2,tv:Le*S2,hv0:(Le+L+Bu)/(2*S2),delta:(Bu+g)/(2*S2),bw:Le/S2,u0:L/S2,plankA:L*B};
+  }
+  const Le=L+g,Be=B+g;
+  return {kind:'recht',L,B,g,Le,Be,stag:num(state.pattern.stagger),tu:Le,tv:Be,hv0:B/2,delta:0,bw:Be,plankA:L*B};
+}
+function* patternPlanks(pi,box){ // in (u,v): u langs de hartlijn, v dwars
+  const M=(pi.L+(pi.Bu||pi.B))*1.2;
+  if(pi.kind==='visgraat'){
+    const {L,B,g,m,Le,tu,tv,hv0,u0}=pi;
+    const i0=Math.floor((box.vmin-M)/tv)-1,i1=Math.ceil((box.vmax+M)/tv)+1,j0=Math.floor((box.umin-M)/tu)-1,j1=Math.ceil((box.umax+M)/tu)+1;
+    for(let i=i0;i<=i1;i++)for(let j=j0;j<=j1;j++){
+      const ou=j*tu,ov=i*tv,mp=(x,y)=>[(x-y)/S2-u0+ou,(x+y)/S2-hv0+ov];
+      for(let k=0;k<m;k++){
+        const y0=k*(B+g);yield {t:'A',zone:i===0,p:[mp(0,y0),mp(L,y0),mp(L,y0+B),mp(0,y0+B)]};
+        const x0=Le+k*(B+g);yield {t:'B',zone:i===0,p:[mp(x0,0),mp(x0+B,0),mp(x0+B,L),mp(x0,L)]};
+      }
+    }
+  }else{
+    const {L,B,Le,Be,stag}=pi;
+    const r0=Math.floor((box.vmin-M)/Be)-1,r1=Math.ceil((box.vmax+M)/Be)+1;
+    for(let r=r0;r<=r1;r++){
+      const sh=mod(r*stag,1)*Le,v0=r*Be-B/2,k0=Math.floor((box.umin-M-sh)/Le)-1,k1=Math.ceil((box.umax+M-sh)/Le)+1;
+      for(let k=k0;k<=k1;k++){const u=k*Le+sh;yield {t:'A',zone:r===0,p:[[u,v0],[u+L,v0],[u+L,v0+B],[u,v0+B]]};}
+    }
+  }
+}
+function axisFrame(axis){
+  const th=num(axis.angle)*D2R,a=[Math.cos(th),-Math.sin(th)],n=[Math.sin(th),Math.cos(th)],C=geo.centroid;
+  const O=[C[0]+num(axis.off)*n[0]+num(axis.phase)*a[0],C[1]+num(axis.off)*n[1]+num(axis.phase)*a[1]];
+  return {a,n,O,C};
+}
+function analyse(axis,keep){
+  const pi=patternInfo(),fr=axisFrame(axis),{a,n,O}=fr,pA=pi.plankA;
+  let umin=1e18,umax=-1e18,vmin=1e18,vmax=-1e18;
+  for(const S of geo.ok)for(const p of S.poly){const d=sub(p,O),u=dot(d,a),v=dot(d,n);if(u<umin)umin=u;if(u>umax)umax=u;if(v<vmin)vmin=v;if(v>vmax)vmax=v;}
+  const out={pi,fr,full:{A:0,B:0},cuts:{A:[],B:[]},slivers:0,pieces:[],netCovered:0};
+  if(!geo.ok.length)return out;
+  const fb=geo.bb;
+  for(const pk of patternPlanks(pi,{umin,umax,vmin,vmax})){
+    const gp=pk.p.map(([u,v])=>[O[0]+u*a[0]+v*n[0],O[1]+u*a[1]+v*n[1]]);
+    const b=bbox(gp);if(!bbHit(b,fb))continue;
+    let net=0;const pcs=[];
+    for(const S of geo.ok){
+      if(!bbHit(b,S.bb))continue;
+      const c=clipSH(S.poly,gp);if(c.length<3)continue;const ar=Math.abs(sArea(c));if(ar<1)continue;
+      net+=ar;pcs.push(c);
+      for(const ob of S.obs){const ob_b=bbox(ob.poly);if(!bbHit(b,ob_b))continue;const oc=clipSH(ob.poly,gp);if(oc.length>=3)net-=Math.abs(sArea(oc));}
+    }
+    if(net<pA*0.002)continue;
+    const f=Math.min(1,net/pA),isFull=f>0.995;
+    let sliver=false;
+    if(!isFull){
+      const e1=sub(gp[1],gp[0]),e2=sub(gp[3],gp[0]),l1=vlen(e1),l2=vlen(e2);
+      const ul=l1>=l2?mul(e1,1/l1):mul(e2,1/l2),us=[-ul[1],ul[0]];
+      let a0=1e18,a1=-1e18,s0=1e18,s1=-1e18;
+      for(const c of pcs)for(const p of c){const x=dot(p,ul),y=dot(p,us);if(x<a0)a0=x;if(x>a1)a1=x;if(y<s0)s0=y;if(y>s1)s1=y;}
+      sliver=f<0.06||(s1-s0)<Math.min(25,pi.B*0.3)||(a1-a0)<Math.min(60,pi.L*0.3);
+      out.cuts[pk.t].push(f);if(sliver)out.slivers++;
+    }else out.full[pk.t]++;
+    out.netCovered+=net;
+    if(keep)out.pieces.push({pcs,t:pk.t,zone:pk.zone,full:isFull,sliver});
+  }
+  // tellingen
+  const kerfF=0.01+Math.max(0,num(state.mat.kerf))/pi.L;
+  const pairs=arr=>{const s=arr.slice().sort((x,y)=>x-y);let i=0,j=s.length-1,p=0;while(i<j){if(s[i]+s[j]+kerfF<=1){p++;i++;j--;}else j--;}return s.length-p;};
+  out.nCut=out.cuts.A.length+out.cuts.B.length;
+  out.pess={A:out.full.A+out.cuts.A.length,B:out.full.B+out.cuts.B.length};
+  out.opt={A:out.full.A+pairs(out.cuts.A),B:out.full.B+pairs(out.cuts.B)};
+  const base=state.mat.reuse?out.opt:out.pess,rf=1+Math.max(0,num(state.mat.reserve))/100;
+  out.order={A:Math.ceil(base.A*rf),B:pi.kind==='visgraat'?Math.ceil(base.B*rf):0};
+  out.orderTot=out.order.A+out.order.B;
+  out.waste=geo.net>0?(out.orderTot*pA/1e6-geo.net/1e6)/(geo.net/1e6):0;
+  return out;
+}
+
+/* ---------- referentiemuren & reststroken ---------- */
+function wallName(S,e){
+  const m=e.m;let nm='schuine muur';
+  if(m[1]>0.9)nm='bovenmuur';else if(m[1]<-0.9)nm='ondermuur';else if(m[0]>0.9)nm='linkermuur';else if(m[0]<-0.9)nm='rechtermuur';
+  const fr={boven:'bovenmuur',onder:'ondermuur',links:'linkermuur',rechts:'rechtermuur'}[state.front];
+  return `${nm}${nm===fr?' (voorzijde)':''} van ${esc(S.sp.name)}`;
+}
+function layoutRefs(r){
+  const {a,n,O}=r.fr,pi=r.pi;if(!geo.ok.length)return null;
+  // hoofdruimte = ruimte waar de hartlijn het langst doorheen loopt, anders de grootste
+  const main=geo.ok.slice().sort((x,y)=>y.area-x.area)[0];
+  let ref=null,rs=-1,cross=null,cs=-1;
+  for(const e of main.edges){if(e.open)continue;const par=Math.abs(dot(e.w,a)),s1=par>0.985?e.len:e.len*0.01*par;if(s1>rs){rs=s1;ref=e;}
+    const per=Math.abs(dot(e.w,n)),s2=per>0.985?e.len:e.len*0.01*per;if(s2>cs){cs=s2;cross=e;}}
+  const vline=pi.kind==='visgraat'?0:pi.B/2+pi.g/2;
+  const meas=(e,vl)=>{const mn=dot(e.m,n);if(Math.abs(mn)<0.05)return null;
+    const t1=Math.min(500,e.len*0.15),t2=e.len-t1;
+    return [t1,t2].map(t=>{const P=plus(e.p,mul(e.w,t)),s=-(dot(sub(P,O),n)-vl)/mn;return {t,s,P,Q:plus(P,mul(e.m,s))};});};
+  const refM=meas(ref,vline);
+  // reststroken: buitenste wanden evenwijdig aan de hartlijn, per kant
+  let lo=null,hi=null;
+  for(const S of geo.ok)for(const e of S.edges){if(e.open||Math.abs(dot(e.w,a))<0.985)continue;const v=dot(sub(e.mid,O),n);
+    if(v<0&&(!lo||v<lo.v))lo={e,S,v};if(v>0&&(!hi||v>hi.v))hi={e,S,v};}
+  const rest=x=>{if(!x)return null;const d=Math.abs(x.v);
+    if(pi.kind==='visgraat'){if(d<pi.hv0)return {d,fit:false,rest:d,n:0};const z=d-pi.hv0;return {d,fit:true,n:Math.floor(z/pi.bw),rest:mod(z,pi.bw)};}
+    const z=d-pi.B/2-pi.g;if(z<0)return {d,fit:false,rest:d+pi.B/2,n:0};return {d,fit:true,n:Math.floor(z/pi.Be),rest:mod(z,pi.Be)};};
+  // eerste punt vanaf dwarsmuur
+  let first=null;
+  if(pi.kind==='visgraat'&&cross&&Math.abs(dot(cross.w,n))>0.2){
+    const vl=-pi.delta,wn=dot(cross.w,n);const tt=(vl-dot(sub(cross.p,O),n))/wn;const X=plus(cross.p,mul(cross.w,tt));
+    const uX=dot(sub(X,O),a),dir=Math.sign(dot(cross.m,a))||1;
+    let uT=dir>0?Math.ceil(uX/pi.tu)*pi.tu:Math.floor(uX/pi.tu)*pi.tu;
+    const along=Math.abs(uT-uX)/Math.abs(dot(cross.m,a)||1);
+    const T=plus(plus(O,mul(a,uT)),mul(n,vl));
+    first={X,T,dist:Math.abs(uT-uX),along,onWall:tt>=-5&&tt<=cross.len+5};
+  }
+  let phaseWall=null;
+  if(pi.kind==='recht'&&cross){const X=cross.mid;const uX=dot(sub(X,O),a);const dir=Math.sign(dot(cross.m,a))||1;
+    // eerste kopse naad in rij 0 vanaf dwarsmuur
+    const sh=0;let uT=dir>0?Math.ceil((uX-sh)/pi.Le)*pi.Le+sh:Math.floor((uX-sh)/pi.Le)*pi.Le+sh;phaseWall={dist:Math.abs(uT-uX)};}
+  return {main,ref,refM,cross,lo,hi,restLo:rest(lo),restHi:rest(hi),first,phaseWall,vline};
+}
+
+/* ================= tekenen ================= */
+let view={pxmm:10,vb:[0,0,1,1]};
+function renderPlan(){
+  const svg=$('plan');
+  if(!geo.ok.length){svg.innerHTML='';svg.setAttribute('viewBox','0 0 100 100');return;}
+  const b=geo.bb,W=b.x1-b.x0,H=b.y1-b.y0;
+  const cw=svg.getBoundingClientRect().width||600,maxH=Math.max(300,Math.min(720,window.innerHeight*0.58));
+  let pad=Math.max(W,H)*0.07+350,vb,pxmm;
+  for(let it=0;it<3;it++){ // marge schalen met de lettergrootte, hoogte volgt de vorm van de vloer
+    vb=[b.x0-pad,b.y0-pad,W+2*pad,H+2*pad];
+    const h=Math.max(260,Math.min(maxH,cw*vb[3]/vb[2]));
+    pxmm=Math.max(vb[2]/cw,vb[3]/h);
+    pad=Math.max(Math.max(W,H)*0.05+200,11.5*pxmm*3.6);
+  }
+  svg.style.height=Math.max(260,Math.min(maxH,cw*vb[3]/vb[2]))+'px';
+  svg.setAttribute('viewBox',vb.map(v=>v.toFixed(1)).join(' '));
+  view={pxmm,vb};
+  const fs=11.5*pxmm,{a,n,O}=res.fr,pi=res.pi,diag=Math.hypot(W,H)+2*pad;
+  const P=p=>`${p[0].toFixed(1)},${p[1].toFixed(1)}`;
+  const path=ps=>'M'+ps.map(P).join('L')+'Z';
+  let s=`<defs><pattern id="hatch" patternUnits="userSpaceOnUse" width="${(7*pxmm).toFixed(1)}" height="${(7*pxmm).toFixed(1)}" patternTransform="rotate(45)"><rect width="100%" height="100%" fill="#ece8e1"/><line x1="0" y1="0" x2="0" y2="${(7*pxmm).toFixed(1)}" stroke="#a49c8f" stroke-width="${(1.6*pxmm).toFixed(1)}"/></pattern>
+  <clipPath id="floorclip">${geo.ok.map(S=>`<path d="${path(S.poly)}"/>`).join('')}</clipPath></defs>`;
+  s+=geo.ok.map(S=>`<path d="${path(S.poly)}" fill="var(--spacebg)"/>`).join('');
+  if(ui.showPlanks){
+    let pa='',pb='',pz='',pzb='',ps='',ca='',cb='',cz='',czb='';
+    for(const pc of res.pieces){const d=pc.pcs.map(path).join('');
+      if(pc.sliver)ps+=d;else if(pc.zone)(pc.t==='A'?(pc.full?(pz+=d):(cz+=d)):(pc.full?(pzb+=d):(czb+=d)));
+      else (pc.t==='A'?(pc.full?(pa+=d):(ca+=d)):(pc.full?(pb+=d):(cb+=d)));}
+    s+=`<g class="pc"><path class="pa" d="${pa}"/><path class="pb" d="${pb}"/><path class="pz" d="${pz}"/><path class="pzb" d="${pzb}"/>
+      <path class="pa cut" d="${ca}"/><path class="pb cut" d="${cb}"/><path class="pz cut" d="${cz}"/><path class="pzb cut" d="${czb}"/><path class="ps" d="${ps}"/></g>`;
+  }
+  // uitsparingen
+  for(const S of geo.ok)for(const ob of S.obs){
+    s+=`<path d="${path(ob.poly)}" fill="url(#hatch)" stroke="var(--obs)" stroke-width="1.2" vector-effect="non-scaling-stroke"/>`;
+    const c=centroid(ob.poly);s+=txt(c,ob.o.name||'Uitsparing',fs*0.95,'#4a463f',700);
+  }
+  // lijnen (binnen de vloer)
+  const line=(v,col,w,dash)=>{const p1=plus(plus(O,mul(n,v)),mul(a,-diag)),p2=plus(plus(O,mul(n,v)),mul(a,diag));
+    return `<line x1="${p1[0].toFixed(1)}" y1="${p1[1].toFixed(1)}" x2="${p2[0].toFixed(1)}" y2="${p2[1].toFixed(1)}" stroke="${col}" stroke-width="${w}" vector-effect="non-scaling-stroke" ${dash?`stroke-dasharray="${dash}"`:''}/>`;};
+  s+=`<g clip-path="url(#floorclip)">`;
+  if(pi.kind==='visgraat'){s+=line(-pi.hv0,'var(--ref)',1.4,'6 5')+line(pi.hv0,'var(--ref)',1.4,'6 5')+line(-pi.delta,'var(--leg)',2);}
+  else{s+=line(pi.B/2+pi.g/2,'var(--leg)',2)+line(-pi.B/2-pi.g/2,'var(--ref)',1.2,'6 5');}
+  s+=line(0,'var(--chalk)',2.6);
+  s+=`</g>`;
+  // ruimtecontouren
+  for(const S of geo.ok){const sel=S.sp.id===ui.sel;
+    s+=`<path d="${path(S.poly)}" fill="none" stroke="${sel&&ui.mode==='move'?'var(--chalk)':'#6b6357'}" stroke-width="${sel&&ui.mode==='move'?2.6:1.8}" vector-effect="non-scaling-stroke"/>`;}
+  for(const S of geo.ok)for(const e of S.edges)if(e.open)
+    s+=`<line x1="${e.p[0]}" y1="${e.p[1]}" x2="${e.q[0]}" y2="${e.q[1]}" stroke="var(--planbg)" stroke-width="3" vector-effect="non-scaling-stroke"/><line x1="${e.p[0]}" y1="${e.p[1]}" x2="${e.q[0]}" y2="${e.q[1]}" stroke="#a49c8f" stroke-width="1.2" stroke-dasharray="3 4" vector-effect="non-scaling-stroke"/>`;
+  // referentie & maatvoering
+  const R=layoutRefs(res);res.refs=R;
+  if(R){
+    if(R.ref)s+=`<line x1="${R.ref.p[0]}" y1="${R.ref.p[1]}" x2="${R.ref.q[0]}" y2="${R.ref.q[1]}" stroke="var(--chalk)" stroke-width="5" stroke-linecap="round" opacity=".55" vector-effect="non-scaling-stroke"/>`;
+    if(R.refM)for(const m of R.refM){s+=`<line x1="${m.P[0].toFixed(1)}" y1="${m.P[1].toFixed(1)}" x2="${m.Q[0].toFixed(1)}" y2="${m.Q[1].toFixed(1)}" stroke="var(--chalk)" stroke-width="1.3" stroke-dasharray="2 3" vector-effect="non-scaling-stroke"/>`;
+      s+=`<circle cx="${m.Q[0].toFixed(1)}" cy="${m.Q[1].toFixed(1)}" r="${(3.5*pxmm).toFixed(1)}" fill="var(--chalk)"/>`;
+      s+=txt(mul(plus(m.P,m.Q),.5),nl0(Math.abs(m.s)),fs,'var(--chalk)',800);}
+    if(R.first&&R.first.onWall){s+=`<circle cx="${R.first.T[0].toFixed(1)}" cy="${R.first.T[1].toFixed(1)}" r="${(4.5*pxmm).toFixed(1)}" fill="none" stroke="var(--leg)" stroke-width="2.2" vector-effect="non-scaling-stroke"/>`;}
+  }
+  // maten
+  if(ui.showDims){
+    for(const S of geo.ok){
+      for(const e of S.edges){if(e.len<250)continue;
+        const pos=plus(e.mid,mul(e.m,-fs*1.05));let ang=Math.atan2(e.w[1],e.w[0])/D2R;if(ang>90)ang-=180;if(ang<=-90)ang+=180;
+        s+=`<text x="${pos[0].toFixed(1)}" y="${pos[1].toFixed(1)}" font-size="${(fs*0.9).toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="#7d7468" font-weight="600" transform="rotate(${ang.toFixed(2)} ${pos[0].toFixed(1)} ${pos[1].toFixed(1)})">${nl0(e.len)}</text>`;}
+    }
+  }
+  for(const S of geo.ok){s+=txt(S.label,S.sp.name||'Ruimte',fs*1.15,'#2b2620',800,-fs*0.6);s+=txt(S.label,nl2(S.net/1e6)+' m²',fs*0.95,'#5d554a',600,fs*0.65);}
+  // voorzijde + schaal
+  const fr=state.front,cx=b.x0+W/2,cy=b.y0+H/2,lab='VOORZIJDE';
+  const fpos={boven:[cx,vb[1]+fs*1.3,0],onder:[cx,vb[1]+vb[3]-fs*0.9,0],links:[vb[0]+fs*1.2,cy,-90],rechts:[vb[0]+vb[2]-fs*1.2,cy,90]}[fr];
+  s+=`<text x="${fpos[0].toFixed(1)}" y="${fpos[1].toFixed(1)}" font-size="${(fs*0.95).toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="#8a8172" font-weight="800" letter-spacing="${(2*pxmm).toFixed(1)}" transform="rotate(${fpos[2]} ${fpos[0].toFixed(1)} ${fpos[1].toFixed(1)})">${lab}</text>`;
+  const sbx=vb[0]+fs,sby=vb[1]+vb[3]-fs*0.8;
+  s+=`<rect x="${sbx.toFixed(1)}" y="${(sby-3*pxmm).toFixed(1)}" width="1000" height="${(4*pxmm).toFixed(1)}" fill="#8a8172"/><text x="${(sbx+500).toFixed(1)}" y="${(sby-6*pxmm).toFixed(1)}" font-size="${(fs*0.85).toFixed(1)}" text-anchor="middle" fill="#8a8172" font-weight="700">1 m</text>`;
+  svg.innerHTML=s;
+  svg.className.baseVal='mode-'+ui.mode;
+}
+function txt(p,t,size,col,wt,dy=0){return `<text x="${p[0].toFixed(1)}" y="${(p[1]+dy).toFixed(1)}" font-size="${size.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="${col}" font-weight="${wt}" stroke="#fff" stroke-width="${(size*0.28).toFixed(1)}" paint-order="stroke" stroke-linejoin="round">${esc(t)}</text>`;}
+
+/* ================= panelen ================= */
+function renderKpis(){
+  const r=res,pi=r.pi;
+  const plint=plintCalc();
+  const ab=pi.kind==='visgraat'?`A ${nl0(r.order.A)} · B ${nl0(r.order.B)}`:`${nl2(r.orderTot*pi.plankA/1e6)} m²`;
+  $('kpis').innerHTML=`
+    <div class="stat"><div class="lab">Netto vloer</div><div class="val">${nl2(geo.net/1e6)} <small>m²</small></div><div class="sub">${geo.ok.length} ${geo.ok.length===1?'ruimte':'ruimtes'}</div></div>
+    <div class="stat chalk"><div class="lab">Bestellen</div><div class="val">${nl0(r.orderTot)} <small>planken</small></div><div class="sub">${ab}</div></div>
+    <div class="stat"><div class="lab">Snijverlies (berekend)</div><div class="val">${nl1(r.waste*100)} <small>%</small></div><div class="sub">${nl0(r.nCut)} zaagstukken</div></div>
+    <div class="stat ${r.slivers?'bad':''}"><div class="lab">Snippers</div><div class="val">${nl0(r.slivers)} <small>st</small></div><div class="sub">${r.slivers?'schuif de hartlijn':'netjes'}</div></div>`;
+  const gw=[...geo.warns];
+  geo.spaces.forEach(S=>S.warn.forEach(w=>gw.push(`<b>${esc(S.sp.name)}:</b> ${w}`)));
+  $('globalWarns').innerHTML=gw.map(w=>`<div class="warn"><span class="ic">!</span><span>${w}</span></div>`).join('');
+}
+function plintCalc(){
+  const per=geo.ok.reduce((t,S)=>t+S.perim,0);
+  const doors=geo.ok.reduce((t,S)=>t+Math.max(0,num(S.sp.doors))*Math.max(0,num(S.sp.doorW)),0);
+  const len=Math.max(0,per-2*geo.sharedOpen-doors-geo.behindObs);
+  const pl=Math.max(100,num(state.mat.plintLen));
+  return {per,doors,len,pieces:Math.ceil(len*1.08/pl),pl};
+}
+function renderSpaceInfo(){
+  geo.spaces.forEach(S=>{
+    const sum=document.getElementById('sum-'+S.sp.id),inf=document.getElementById('info-'+S.sp.id),nm=document.getElementById('nm-'+S.sp.id);
+    if(nm)nm.textContent=S.sp.name||'Ruimte';
+    if(sum)sum.textContent=S.bad?'—':`${nl2(S.net/1e6)} m²`;
+    if(inf){let h='';
+      if(!S.bad)h+=`<div>Oppervlak ${nl2(S.area/1e6)} m²${S.obsA?` − uitsparingen ${nl2(S.obsA/1e6)} m² = <b>${nl2(S.net/1e6)} m²</b>`:''} · omtrek ${nl2(S.perim/1000)} m</div>`;
+      h+=S.info.map(i=>`<div class="note">${i}</div>`).join('');
+      h+=S.warn.map(w=>`<div class="warn"><span class="ic">!</span><span>${w}</span></div>`).join('');
+      inf.innerHTML=h;}
+  });
+}
+function renderPatternInfo(){
+  const pi=res.pi;let h='';
+  if(pi.kind==='visgraat'){
+    h=`<div class="stats3">
+      <div class="stat"><div class="lab">Startbanen samen</div><div class="val">${nl0(2*pi.hv0)} <small>mm</small></div></div>
+      <div class="stat"><div class="lab">Puntritme</div><div class="val">${nl1(pi.tu)} <small>mm</small></div></div>
+      <div class="stat"><div class="lab">Breedte per baan</div><div class="val">${nl1(pi.bw)} <small>mm</small></div></div></div>
+      <div class="note">Visgraat-planken bestaan in twee spiegelvormen: <b>A</b> (licht) en <b>B</b> (donker in de tekening). Je hebt van beide ongeveer evenveel nodig — de bestellijst rekent ze apart uit. Visgraat sluit bij élke verhouding L:B gatloos.</div>`;
+    if(pi.m>1)h+=`<div class="note">${pi.m===2?'Dubbele':'Driedubbele'} visgraat: telkens ${pi.m} planken naast elkaar vormen één ‘brede plank’ van ${nl0(pi.Bu)} mm.</div>`;
+  }else{
+    h=`<div class="stats3">
+      <div class="stat"><div class="lab">Rijbreedte</div><div class="val">${nl0(pi.Be)} <small>mm</small></div></div>
+      <div class="stat"><div class="lab">Verspringing</div><div class="val">${nl0(mod(pi.stag,1)*pi.Le)} <small>mm</small></div></div>
+      <div class="stat"><div class="lab">Planken per m²</div><div class="val">${nl1(1e6/(pi.Le*pi.Be))}</div></div></div>`;
+    if(pi.stag>0&&mod(pi.stag,1)*pi.Le<300&&pi.L>500)h+=`<div class="warn"><span class="ic">!</span><span>Kopse naden liggen minder dan 30 cm verspringend. Voor click-PVC raden fabrikanten meestal ≥ 30 cm aan.</span></div>`;
+  }
+  $('patternInfo').innerHTML=h;
+}
+function sideTxt(x,rest){
+  if(!x||!rest)return '–';
+  if(!rest.fit)return `<span style="color:var(--bad)">past niet</span>`;
+  return `${nl0(rest.rest)} <small>mm</small>`;
+}
+function renderUitzet(){
+  const r=res,pi=r.pi,R=r.refs;
+  const stats=$('uitzetStats'),steps=$('steps'),adv=$('uitzetAdvice');
+  if(!R||!R.ref){stats.innerHTML='';steps.innerHTML='';adv.innerHTML='';return;}
+  const refN=wallName(R.main,R.ref),m=R.refM;
+  const loN=R.lo?wallName(R.lo.S,R.lo.e):'',hiN=R.hi?wallName(R.hi.S,R.hi.e):'';
+  stats.innerHTML=`
+    <div class="stat chalk"><div class="lab">Hartlijn vanaf referentiemuur</div><div class="val">${m?nl0(Math.abs(m[0].s)):'–'} <small>mm</small></div><div class="sub">${refN}</div></div>
+    <div class="stat"><div class="lab">Reststrook ${R.lo?esc(loN.split(' van ')[0]):'kant 1'}</div><div class="val">${sideTxt(R.lo,R.restLo)}</div><div class="sub">${R.restLo&&R.restLo.fit?nl0(R.restLo.n)+' volle '+(pi.kind==='visgraat'?'banen':'rijen'):''}</div></div>
+    <div class="stat"><div class="lab">Reststrook ${R.hi?esc(hiN.split(' van ')[0]):'kant 2'}</div><div class="val">${sideTxt(R.hi,R.restHi)}</div><div class="sub">${R.restHi&&R.restHi.fit?nl0(R.restHi.n)+' volle '+(pi.kind==='visgraat'?'banen':'rijen'):''}</div></div>`;
+  // advies
+  let a='';
+  const thin=(x)=>x&&x.fit&&x.rest<(pi.kind==='visgraat'?pi.bw/3:pi.B/3);
+  if((R.restLo&&!R.restLo.fit)||(R.restHi&&!R.restHi.fit))a+=`<div class="warn"><span class="ic">!</span><span>De startbanen passen niet tussen de muren aan één kant van de hartlijn. Schuif de hartlijn naar het midden of kies een smallere plank.</span></div>`;
+  if(r.slivers)a+=`<div class="warn"><span class="ic">!</span><span><b>${r.slivers} snipper${r.slivers>1?'s':''}</b> (rood in de tekening). Probeer <b>✨ Slim optimaliseren</b> of schuif de hartlijn een paar centimeter.</span></div>`;
+  if(thin(R.restLo)||thin(R.restHi))a+=`<div class="warn"><span class="ic">!</span><span>Smalle reststrook langs de muur. Kies doel “brede, gelijke randstroken” bij optimaliseren.</span></div>`;
+  if(!a)a=`<div class="good">Ziet er netjes uit: geen snippers en randstroken met een werkbare maat.</div>`;
+  adv.innerHTML=a;
+  // stappen
+  const st=[];
+  const b=x=>`<b class="mm">${x} mm</b>`;
+  const meetTxt=m?(Math.abs(m[0].s-m[1].s)<1.5?`meet op twee plekken haaks ${b(nl0(Math.abs(m[0].s)))} uit`:`meet haaks ${b(nl0(Math.abs(m[0].s)))} uit op ${nl0(m[0].t)} mm vanaf het begin, en ${b(nl0(Math.abs(m[1].s)))} op ${nl0(m[1].t)} mm`):'meet de afstand op twee plekken';
+  if(pi.kind==='visgraat'){
+    st.push(`<b>Hartlijn</b> (blauw): vanaf de ${refN} ${meetTxt}. Sla door die twee punten een krijtlijn over de hele vloer${geo.ok.length>1?', door alle ruimtes heen':''}. Dit is je meet- en centreerlijn.`);
+    st.push(`Controleer haaks met 3-4-5 (300/400/500 mm of 600/800/1000 mm) en meet altijd vanaf de krijtlijn, nooit vanaf de muur.`);
+    const refSide=Math.sign(dot(sub(R.ref.mid,r.fr.O),r.fr.n));
+    st.push(`<b>Puntlijn</b> (groen): evenwijdig op ${b(nl1(pi.delta))} naast de hartlijn, aan de kant ${refSide<0?'van':'weg van'} de ${refN.split(' van ')[0]}. Hier komen de punten van de rits tegen te liggen.`);
+    if(R.first)st.push(`<b>Eerste punt:</b> meet langs de puntlijn ${b(nl0(R.first.dist))} vanaf de ${wallName(R.main,R.cross)} (groen rondje). Daarna valt er elke ${b(nl1(pi.tu))} een punt — markeer er een paar en tel na.`);
+    st.push(`<b>Startbanen-rand</b> (rood gestippeld) op ${b(nl0(pi.hv0))} aan weerszijden van de hartlijn — samen ${b(nl0(2*pi.hv0))}. Hiertussen liggen de twee startbanen.`);
+    st.push(`Leg eerst de <b>rits</b>: A- en B-planken om en om, punten precies op de puntlijn. Lijm/klik over minstens 1 meter en controleer dan pas verder.`);
+    st.push(`Ligt de rits recht, vul dan op naar de muren. Zaag de randen als laatste: ${R.restLo&&R.restLo.fit?`${loN.split(' van ')[0]} ${b(nl0(R.restLo.rest))}`:''}${R.restLo&&R.restHi&&R.restLo.fit&&R.restHi.fit?', ':''}${R.restHi&&R.restHi.fit?`${hiN.split(' van ')[0]} ${b(nl0(R.restHi.rest))}`:''}. ${r.nCut} zaagstukken, ${r.slivers} snipper${r.slivers===1?'':'s'}.`);
+  }else{
+    st.push(`<b>Startlijn</b> (groen, een langsnaad): vanaf de ${refN} ${meetTxt}. Sla een krijtlijn over de hele vloer.`);
+    st.push(`Controleer haaks met 3-4-5 en meet altijd vanaf de krijtlijn.`);
+    st.push(`Leg de eerste rij met de lange kant tegen de startlijn. Rijbreedte ${b(nl0(pi.Be))}${pi.stag>0?`, kopse naden verspringen elke rij ${b(nl0(mod(pi.stag,1)*pi.Le))}`:', naden in lijn'}.`);
+    if(R.phaseWall)st.push(`De eerste kopse naad in de startrij ligt op ${b(nl0(R.phaseWall.dist))} vanaf de ${wallName(R.main,R.cross)}.`);
+    st.push(`Werk naar beide kanten op. Laatste rij langs de muren: ${R.restLo&&R.restLo.fit?`${loN.split(' van ')[0]} ${b(nl0(R.restLo.rest))}`:''}${R.restLo&&R.restHi&&R.restLo.fit&&R.restHi.fit?', ':''}${R.restHi&&R.restHi.fit?`${hiN.split(' van ')[0]} ${b(nl0(R.restHi.rest))}`:''}.`);
+  }
+  if(state.mat.method==='click')st.push(`Click-vloer: houd rondom ${b('5–8')} dilatatie vrij en leg bij elke doorgang tussen ruimtes een profiel als de vloer langer is dan de fabrikant toestaat.`);
+  steps.innerHTML=st.map(x=>`<li>${x}</li>`).join('');
+}
+function renderMaterial(){
+  const r=res,pi=r.pi,pA=pi.plankA/1e6,mt=state.mat,pl=plintCalc(),vis=pi.kind==='visgraat';
+  const rows=[];
+  rows.push(['Netto vloeroppervlak'+(geo.ok.length>1?`<br><small>${geo.ok.map(S=>`${esc(S.sp.name)} ${nl2(S.net/1e6)}`).join(' · ')}</small>`:''),`${nl2(geo.net/1e6)} m²`]);
+  if(vis){rows.push([`Hele planken <small>(A / B)</small>`,`${r.full.A} / ${r.full.B}`]);rows.push([`Te zagen planken <small>(A / B)</small>`,`${r.cuts.A.length} / ${r.cuts.B.length}`]);}
+  else{rows.push(['Hele planken',`${r.full.A}`]);rows.push(['Te zagen planken',`${r.cuts.A.length}`]);}
+  rows.push([`Zonder hergebruik van restjes`,`${nl0(r.pess.A+r.pess.B)} st`]);
+  rows.push([`Met slim hergebruik <small>(optimistisch)</small>`,`${nl0(r.opt.A+r.opt.B)} st`]);
+  rows.push([`+ reserve ${nl0(num(mt.reserve))}%`,'']);
+  const tot=r.orderTot;
+  rows.push([`<b>Bestellen</b>${vis?` <small>A ${r.order.A} · B ${r.order.B}</small>`:''}<br><small>= ${nl2(tot*pA)} m² · totaal snijverlies ${nl1(r.waste*100)}%</small>`,`${nl0(tot)} planken`,'tot']);
+  let perPak=num(mt.pakStuks);if(!perPak&&num(mt.pakM2)>0)perPak=Math.max(1,Math.round(num(mt.pakM2)/pA));
+  let pakTxt='';
+  if(perPak>0){
+    let paks;
+    if(vis&&mt.abMixed)paks=Math.ceil(Math.max(r.order.A,r.order.B)/(perPak/2));
+    else if(vis)paks=Math.ceil(r.order.A/perPak)+Math.ceil(r.order.B/perPak);
+    else paks=Math.ceil(tot/perPak);
+    pakTxt=`${paks} pakken`;
+    rows.push([`Pakken <small>(${perPak} st/pak${vis?(mt.abMixed?', A+B gemengd':', A en B apart'):''}${num(mt.pakM2)>0&&!num(mt.pakStuks)?', afgeleid uit m²':''})</small>`,pakTxt,'tot']);
+  }
+  if(mt.plint)rows.push([`Plinten <small>omtrek ${nl2(pl.per/1000)} m − deuren ${nl2(pl.doors/1000)} m${geo.sharedOpen?` − open doorgangen ${nl2(2*geo.sharedOpen/1000)} m`:''}${geo.behindObs?` − achter keukenblok e.d. ${nl2(geo.behindObs/1000)} m`:''}</small>`,`${nl2(pl.len/1000)} m · ${pl.pieces} × ${nl0(pl.pl)}`]);
+  if(mt.method==='click')rows.push([`Ondervloer <small>(+5% overlap)</small>`,`${nl2(geo.net/1e6*1.05)} m²`]);
+  else rows.push([`Lijm <small>(${nl0(num(mt.lijm))} g/m²)</small>`,`${nl1(geo.net/1e6*num(mt.lijm)/1000)} kg`]);
+  const doorsN=geo.ok.reduce((t,S)=>t+Math.max(0,Math.round(num(S.sp.doors))),0);
+  if(doorsN)rows.push([`Overgangsprofielen / dorpels <small>(1 per deur)</small>`,`${doorsN} st`]);
+  $('matTable').innerHTML=rows.map(([a,b,c])=>`<tr class="${c||''}"><td>${a}</td><td>${b}</td></tr>`).join('');
+  let notes='';
+  if(r.slivers)notes+=`<div class="warn"><span class="ic">!</span><span>${r.slivers} snippers in dit legplan. Optimaliseer de hartlijn (tab Uitzetten) voor minder verlies en minder priegelwerk.</span></div>`;
+  notes+=`<div class="note">“Met slim hergebruik” gaat ervan uit dat je afgezaagde stukken (zelfde type A/B) aan een andere muur weer gebruikt. Lukt dat niet, reken dan met de regel erboven.</div>`;
+  $('matNotes').innerHTML=notes;
+  $('lijmRow').style.display=mt.method==='dryback'?'':'none';
+  res.matText=[`Bestellijst — ${state.name}`,...rows.filter(x=>x[1]).map(([a,b])=>`${a.replace(/<br>/g,' — ').replace(/<[^>]+>/g,'')}: ${b}`)].join('\n');
+}
+function renderPrint(){
+  $('printSheet').innerHTML=`<h2>${esc(state.name)} — bestellijst</h2><table class="mat">${$('matTable').innerHTML}</table><h2>Uitzetten</h2><ol class="steps">${$('steps').innerHTML}</ol>`;
+}
+function syncSliders(){
+  const pi=res.pi,{n,a}=res.fr;let lo=1e18,hi=-1e18,ulo=1e18,uhi=-1e18;
+  for(const S of geo.ok)for(const p of S.poly){const v=dot(sub(p,geo.centroid),n);lo=Math.min(lo,v);hi=Math.max(hi,v);}
+  const off=$('offR');off.min=Math.floor(Math.min(lo,num(state.axis.off)));off.max=Math.ceil(Math.max(hi,num(state.axis.off)));off.value=num(state.axis.off);
+  const ph=$('phR');ph.max=Math.round(pi.tu);ph.value=mod(num(state.axis.phase),pi.tu);
+  $('phaseLab').textContent=pi.kind==='visgraat'?'Langs de lijn (waar de punten vallen)':'Langs de lijn (waar de kopse naden vallen)';
+  syncBinds(['axis.off','axis.phase','axis.angle']);
+}
+
+/* ================= recompute ================= */
+let rafT=0;
+function schedule(){if(rafT)return;rafT=requestAnimationFrame(()=>{rafT=0;recompute();});}
+function recompute(){
+  geo=buildGeometry();
+  res=analyse(state.axis,true);
+  renderPlan();renderKpis();renderSpaceInfo();renderPatternInfo();renderUitzet();renderMaterial();renderPrint();syncSliders();
+  $('voegRow').style.display=state.plank.voegAan?'':'none';
+  $('multRow').style.display=state.pattern.type==='visgraat'?'':'none';
+  $('staggerRow').style.display=state.pattern.type==='recht'?'':'none';
+  save();
+}
+
+/* ================= binding van vaste velden ================= */
+function getPath(p){return p.split('.').reduce((o,k)=>o?.[k],state);}
+function setPath(p,v){const ks=p.split('.'),last=ks.pop();ks.reduce((o,k)=>o[k],state)[last]=v;}
+function syncBinds(only){
+  document.querySelectorAll('[data-bind]').forEach(el=>{const p=el.dataset.bind;if(only&&!only.includes(p))return;if(el===document.activeElement)return;const v=getPath(p);
+    if(el.type==='checkbox')el.checked=!!v;else if(el.tagName==='SELECT'){const o=[...el.options].find(o=>Math.abs(num(o.value)-num(v))<1e-6&&el.dataset.type==='num')||[...el.options].find(o=>o.value==v);if(o)el.value=o.value;}
+    else el.value=(el.type==='number'&&typeof v==='number')?(Math.round(v*100)/100):(v||v===0?v:'');});
+  $('projName').value=state.name||'';
+  const ps=$('preset'),k=`${state.plank.L},${state.plank.B}`;ps.value=[...ps.options].some(o=>o.value===k)?k:'custom';
+}
+document.addEventListener('input',e=>{
+  const el=e.target;if(!el.dataset||!el.dataset.bind)return;
+  let v=el.type==='checkbox'?el.checked:el.value;if(el.dataset.type==='num')v=num(v);
+  setPath(el.dataset.bind,v);
+  if(el.dataset.bind.startsWith('plank.')){const ps=$('preset'),k=`${state.plank.L},${state.plank.B}`;ps.value=[...ps.options].some(o=>o.value===k)?k:'custom';}
+  schedule();
+});
+$('preset').addEventListener('change',e=>{if(e.target.value==='custom')return;const [l,b]=e.target.value.split(',').map(Number);state.plank.L=l;state.plank.B=b;
+  if(l/b<3&&state.pattern.type==='visgraat'){state.pattern.type='recht';state.pattern.stagger=l===b?0:0.5;toast('Patroon op “rechte planken / tegels” gezet');}
+  syncBinds();schedule();});
+$('projName').addEventListener('input',e=>{state.name=e.target.value;save();});
+$('offR').addEventListener('input',e=>{state.axis.off=num(e.target.value);syncBinds(['axis.off']);schedule();});
+$('phR').addEventListener('input',e=>{state.axis.phase=num(e.target.value);syncBinds(['axis.phase']);schedule();});
+document.querySelectorAll('[data-angle]').forEach(b=>b.addEventListener('click',()=>{state.axis.angle=+b.dataset.angle;syncBinds(['axis.angle']);schedule();}));
+$('btnCenter').addEventListener('click',()=>{state.axis.off=0;state.axis.phase=0;syncBinds();schedule();});
+$('btnLongest').addEventListener('click',()=>{let best=null;for(const S of geo.ok)for(const e of S.edges)if(!best||e.len>best.len)best=e;
+  if(best){state.axis.angle=Math.round(mod(Math.atan2(-best.w[1],best.w[0])/D2R,180)*10)/10;syncBinds();schedule();toast('Hartlijn evenwijdig aan de langste muur');}});
+$('btnPickPar').addEventListener('click',()=>{ui.wallMode='par';setMode('wall');$('plan').scrollIntoView({behavior:'smooth',block:'center'});});
+$('btnPickWin').addEventListener('click',()=>{ui.wallMode='win';setMode('wall');$('plan').scrollIntoView({behavior:'smooth',block:'center'});});
+$('showPlanks').addEventListener('change',e=>{ui.showPlanks=e.target.checked;schedule();});
+$('showDims').addEventListener('change',e=>{ui.showDims=e.target.checked;schedule();});
+
+/* ================= tabs & modi ================= */
+$('tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(!b)return;ui.tab=b.dataset.tab;
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('.tabpane').forEach(p=>p.classList.toggle('on',p.id==='tab-'+ui.tab));
+  if(ui.tab==='project')renderProjects();});
+function setMode(m){ui.mode=m;document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.mode===m));
+  const h={hart:'Sleep in de tekening om de hartlijn te verschuiven. Hij klikt vast op het midden van elke ruimte.',
+    move:'Sleep een ruimte naar zijn plek. Hoeken en randen klikken vast aan andere ruimtes.',
+    wall:`Tik op een muur: <label><input type="radio" name="wm" value="par" ${ui.wallMode==='par'?'checked':''}> hartlijn evenwijdig</label><label><input type="radio" name="wm" value="win" ${ui.wallMode==='win'?'checked':''}> raammuur (punten naar het raam)</label>`}[m];
+  $('modeHint').innerHTML=h;schedule();}
+$('modeSeg').addEventListener('click',e=>{const b=e.target.closest('button[data-mode]');if(b)setMode(b.dataset.mode);});
+$('modeHint').addEventListener('change',e=>{if(e.target.name==='wm')ui.wallMode=e.target.value;});
+
+/* ================= slepen in de tekening ================= */
+(function(){
+  const svg=$('plan');let drag=null;
+  const toMM=ev=>{const pt=svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const m=svg.getScreenCTM();if(!m)return [0,0];const r=pt.matrixTransform(m.inverse());return [r.x,r.y];};
+  svg.addEventListener('pointerdown',ev=>{
+    if(!geo||!geo.ok.length)return;const P=toMM(ev);
+    if(ui.mode==='hart'){drag={type:'hart'};svg.setPointerCapture(ev.pointerId);moveHart(P);}
+    else if(ui.mode==='move'){
+      const S=[...geo.ok].reverse().find(S=>pip(P,S.poly));if(!S)return;
+      ui.sel=S.sp.id;openCard(S.sp.id);
+      drag={type:'move',S,start:P,x0:num(S.sp.x),y0:num(S.sp.y),poly0:S.poly.map(p=>p.slice()),others:geo.ok.filter(o=>o!==S).flatMap(o=>o.poly)};
+      svg.setPointerCapture(ev.pointerId);schedule();
+    }else if(ui.mode==='wall'){
+      let best=null,bd=1e18;for(const S of geo.ok)for(const e of S.edges){const d=segDist(P,e.p,e.q);if(d<bd){bd=d;best=e;}}
+      if(best&&bd<30*view.pxmm){let deg=Math.atan2(-best.w[1],best.w[0])/D2R;if(ui.wallMode==='win')deg+=90;
+        state.axis.angle=Math.round(mod(deg,180)*10)/10;syncBinds(['axis.angle']);
+        toast(ui.wallMode==='win'?'Hartlijn haaks op de raammuur — de punten wijzen naar het licht':'Hartlijn evenwijdig aan deze muur');setMode('hart');}
+    }
+    ev.preventDefault();
+  });
+  svg.addEventListener('pointermove',ev=>{if(!drag)return;const P=toMM(ev);
+    if(drag.type==='hart')moveHart(P);
+    else{let dx=P[0]-drag.start[0],dy=P[1]-drag.start[1];const tol=12*view.pxmm;
+      let bx=null,by=null;
+      for(const p of drag.poly0)for(const o of drag.others){const ex=o[0]-(p[0]+dx),ey=o[1]-(p[1]+dy);
+        if(Math.abs(ex)<tol&&(bx===null||Math.abs(ex)<Math.abs(bx)))bx=ex;if(Math.abs(ey)<tol&&(by===null||Math.abs(ey)<Math.abs(by)))by=ey;}
+      if(bx!==null)dx+=bx;if(by!==null)dy+=by;
+      drag.S.sp.x=Math.round(drag.x0+dx);drag.S.sp.y=Math.round(drag.y0+dy);
+      const card=document.querySelector(`[data-sid="${drag.S.sp.id}"]`);if(card){const ix=card.querySelector('[data-k="x"]'),iy=card.querySelector('[data-k="y"]');if(ix)ix.value=drag.S.sp.x;if(iy)iy.value=drag.S.sp.y;}
+      schedule();}
+    ev.preventDefault();});
+  const end=()=>{drag=null;};
+  svg.addEventListener('pointerup',end);svg.addEventListener('pointercancel',end);
+  function moveHart(P){const n=res.fr.n;let off=dot(sub(P,geo.centroid),n);const tol=10*view.pxmm;
+    const snaps=[0,...geo.ok.map(S=>dot(sub(labelPointMid(S),geo.centroid),n))];
+    for(const s of snaps)if(Math.abs(off-s)<tol){off=s;break;}
+    state.axis.off=Math.round(off*10)/10;syncBinds(['axis.off']);schedule();}
+  function labelPointMid(S){ // midden tussen de twee buitenste evenwijdige wanden van de ruimte
+    const n=res.fr.n;let lo=1e18,hi=-1e18;for(const p of S.poly){const v=dot(p,n);lo=Math.min(lo,v);hi=Math.max(hi,v);}
+    const c=S.c;const vc=dot(c,n);return plus(c,mul(n,(lo+hi)/2-vc));}
+})();
+
+/* ================= optimaliseren ================= */
+$('btnOpt').addEventListener('click',()=>{
+  const goal=$('optGoal').value,pi=res.pi,btn=$('btnOpt'),out=$('optOut');
+  const P=pi.kind==='visgraat'?pi.tv:pi.tv,N=goal==='stroken'?120:48,M=goal==='stroken'?1:8;
+  const cands=[];for(let i=0;i<N;i++)for(let j=0;j<M;j++)cands.push({off:-P/2+P*i/N,phase:pi.tu*j/M});
+  const base={...state.axis};let best=null,bestS=1e18,k=0;btn.disabled=true;
+  const score=(ax)=>{const r=analyse(ax,false);
+    if(goal==='planken')return {r,s:r.opt.A+r.opt.B+1.5*r.slivers+0.01*Math.abs(ax.off)/P};
+    const R=layoutRefs(r);const lo=R&&R.restLo,hi=R&&R.restHi;
+    const bad=(lo&&!lo.fit)||(hi&&!hi.fit);const mn=Math.min(lo?lo.rest:1e9,hi?hi.rest:1e9),df=(lo&&hi)?Math.abs(lo.rest-hi.rest):0;
+    return {r,s:(bad?1e6:0)-mn+0.6*df+3*r.slivers*(pi.L/10)};};
+  const cur=score(state.axis);
+  (function step(){
+    const t0=performance.now();
+    while(k<cands.length&&performance.now()-t0<30){const ax={...base,...cands[k]};if(goal==='stroken')ax.phase=base.phase;const sc=score(ax);if(sc.s<bestS){bestS=sc.s;best={ax,r:sc.r};}k++;}
+    out.innerHTML=`<div class="note">Bezig met rekenen… ${Math.round(k/cands.length*100)}%</div>`;
+    if(k<cands.length)return setTimeout(step,0);
+    btn.disabled=false;
+    if(!best||bestS>=cur.s-1e-6){out.innerHTML=`<div class="good">De huidige stand is al de beste die ik kan vinden.</div>`;return;}
+    state.axis.off=Math.round(best.ax.off*10)/10;state.axis.phase=Math.round(best.ax.phase*10)/10;syncBinds();recompute();
+    const b0=cur.r,b1=best.r;
+    out.innerHTML=`<div class="good">Hartlijn ${nl0(Math.abs(state.axis.off))} mm ${state.axis.off>=0?'verschoven':'verschoven (andere kant)'}. Planken (met hergebruik) ${nl0(b0.opt.A+b0.opt.B)} → <b>${nl0(b1.opt.A+b1.opt.B)}</b>, snippers ${b0.slivers} → <b>${b1.slivers}</b>.</div>`;
+  })();
+});
+
+/* ================= ruimtes-kaarten ================= */
+function nf(sp,k,label,o={}){return `<div class="${o.cls||''}"><label>${label}</label><input type="number" inputmode="decimal" data-k="${k}" value="${esc(sp[k])}" step="${o.step||10}" ${o.min!==undefined?`min="${o.min}"`:''}>${o.hint?`<div class="hint">${o.hint}</div>`:''}</div>`;}
+function shapeFields(sp){
+  if(sp.shape==='rect')return `<div class="grid">${nf(sp,'w','Breedte ↔ (mm)')}${nf(sp,'h','Diepte ↕ (mm)')}</div>`;
+  if(sp.shape==='L')return `<div class="grid">${nf(sp,'w','Totale breedte ↔ (mm)')}${nf(sp,'h','Totale diepte ↕ (mm)')}${nf(sp,'cw','Hap eruit: breedte (mm)')}${nf(sp,'ch','Hap eruit: diepte (mm)')}
+    <div class="full"><label>Hap zit in de hoek</label><select data-k="corner">${[['rb','rechtsonder'],['rt','rechtsboven'],['lb','linksonder'],['lt','linksboven']].map(([v,t])=>`<option value="${v}" ${sp.corner===v?'selected':''}>${t}</option>`).join('')}</select></div></div>`;
+  if(sp.shape==='quad')return `<div class="hint" style="margin-bottom:8px">Meet de 4 muren en de diagonaal van hoek <b>linksboven → rechtsonder</b>. Daarmee ligt de vorm exact vast, ook als niets haaks is. De 2e diagonaal is ter controle.</div>
+    <div class="grid">${nf(sp,'a','Bovenmuur (mm)')}${nf(sp,'b','Rechtermuur (mm)')}${nf(sp,'c','Ondermuur (mm)')}${nf(sp,'d','Linkermuur (mm)')}${nf(sp,'e','Diagonaal LB → RO (mm)')}${nf(sp,'f','Diagonaal RB → LO (controle)')}</div>`;
+  if(sp.shape==='free'){
+    const rows=(sp.walls||[]).map((w,i)=>{const known=DIRS.some(d=>d[0]===num(w.deg))&&!w.custom;
+      return `<div class="wallrow ${known?'':'c'}"><span class="no">${i+1}</span><input type="number" inputmode="decimal" data-k="len" data-wi="${i}" value="${esc(w.len)}" step="10" aria-label="Lengte muur ${i+1}">
+        <select data-k="dir" data-wi="${i}" aria-label="Richting muur ${i+1}">${DIRS.map(([d,t])=>`<option value="${d}" ${known&&num(w.deg)===d?'selected':''}>${t}</option>`).join('')}<option value="c" ${known?'':'selected'}>∠ andere hoek…</option></select>
+        ${known?'':`<input type="number" inputmode="decimal" data-k="deg" data-wi="${i}" value="${esc(w.deg)}" step="0.5" aria-label="Hoek in graden">`}
+        <button type="button" class="x" data-act="delWall" data-wi="${i}" aria-label="Muur verwijderen">×</button></div>`;}).join('');
+    return `<div class="hint" style="margin-bottom:8px">Loop met de klok mee langs de muren en vul per muur de lengte en richting in (zoals op de tekening: ↑ = naar boven). De laatste muur terug naar het begin mag je weglaten — die rekent de tool zelf uit.</div>
+      <div class="walls">${rows}</div><div class="btnrow"><button type="button" class="btn sm" data-act="addWall">+ Muur</button></div>`;
+  }
+  return '';
+}
+function spaceCard(sp){
+  const open=sp.id===ui.sel;
+  return `<details class="space" data-sid="${sp.id}" ${open?'open':''}>
+  <summary><span class="dotc"></span><span class="sumname" id="nm-${sp.id}">${esc(sp.name)}</span><span class="sumdim" id="sum-${sp.id}"></span></summary>
+  <div class="spbody">
+    <div class="grid">
+      <div><label>Naam</label><input type="text" data-k="name" value="${esc(sp.name)}"></div>
+      <div><label>Vorm</label><select data-k="shape" data-rr="1">${[['rect','Rechthoek'],['L','L-vorm'],['quad','Scheve vierhoek'],['free','Vrije vorm']].map(([v,t])=>`<option value="${v}" ${sp.shape===v?'selected':''}>${t}</option>`).join('')}</select></div>
+    </div>
+    <h3 style="margin-top:14px">Maten</h3>
+    ${shapeFields(sp)}
+    <h3>Plaats in de tekening</h3>
+    <div class="grid3">${nf(sp,'x','X (mm)')}${nf(sp,'y','Y (mm)')}
+      <div><label>Draaien</label><select data-k="rot">${[0,90,180,270].map(r=>`<option value="${r}" ${num(sp.rot)===r?'selected':''}>${r}°</option>`).join('')}</select></div></div>
+    <h3>Deuren &amp; doorgangen</h3>
+    <div class="grid">${nf(sp,'doors','Aantal deuren',{step:1,min:0})}${nf(sp,'doorW','Deurbreedte (mm)')}
+      <div class="full"><label class="check"><input type="checkbox" data-k="open" ${sp.open?'checked':''}> Open verbinding met aangrenzende ruimte (geen muur, geen plint)</label></div></div>
+    <h3>Uitsparingen (keukenblok, trapgat, kolom…)</h3>
+    ${(sp.obstacles||[]).map((o,i)=>`<div class="obsrow"><div class="on1"><label>Naam</label><input type="text" data-k="name" data-oi="${i}" value="${esc(o.name)}"></div>
+      <div><label>X</label><input type="number" inputmode="decimal" data-k="x" data-oi="${i}" value="${esc(o.x)}" step="10"></div>
+      <div><label>Y</label><input type="number" inputmode="decimal" data-k="y" data-oi="${i}" value="${esc(o.y)}" step="10"></div>
+      <div><label>Breedte</label><input type="number" inputmode="decimal" data-k="w" data-oi="${i}" value="${esc(o.w)}" step="10"></div>
+      <div><label>Diepte</label><input type="number" inputmode="decimal" data-k="h" data-oi="${i}" value="${esc(o.h)}" step="10"></div>
+      <button type="button" class="x" data-act="delObs" data-oi="${i}" aria-label="Uitsparing verwijderen">×</button></div>`).join('')}
+    <div class="hint">X/Y gemeten vanaf de linkerbovenhoek van de ruimte (vóór draaien).</div>
+    <div class="btnrow"><select data-obspreset style="width:auto;flex:1;min-width:140px">${Object.entries(OBS_PRESETS).map(([k,v])=>`<option value="${k}">${v[0]} (${v[1]}×${v[2]})</option>`).join('')}</select><button type="button" class="btn sm" data-act="addObs">+ Uitsparing</button></div>
+    <div class="spinfo" id="info-${sp.id}"></div>
+    <div class="btnrow" style="margin-top:14px"><button type="button" class="btn sm" data-act="dup">Dupliceren</button><button type="button" class="btn sm danger" data-act="del">Verwijderen</button></div>
+  </div></details>`;
+}
+function renderSpaces(){$('spaceList').innerHTML=state.spaces.map(spaceCard).join('')||`<div class="card"><p class="hint">Nog geen ruimtes. Voeg er hierboven één toe.</p></div>`;}
+function openCard(id){document.querySelectorAll('details.space').forEach(d=>{d.open=d.dataset.sid===id;});}
+function localPts(sp){return shapeLocal(sp).pts;}
+function seedShape(sp,to){
+  const pts=localPts(sp);if(pts.length<3)return;const b=bbox(pts),w=Math.round(b.x1-b.x0),h=Math.round(b.y1-b.y0);
+  if(to==='rect'){sp.w=w;sp.h=h;}
+  else if(to==='L'){sp.w=w;sp.h=h;sp.cw=Math.round(w/3/10)*10;sp.ch=Math.round(h/3/10)*10;}
+  else if(to==='quad'){if(pts.length===4){const L=(i)=>Math.round(vlen(sub(pts[(i+1)%4],pts[i])));sp.a=L(0);sp.b=L(1);sp.c=L(2);sp.d=L(3);sp.e=Math.round(vlen(sub(pts[2],pts[0])));sp.f=Math.round(vlen(sub(pts[3],pts[1])));}
+    else{sp.a=sp.c=w;sp.b=sp.d=h;sp.e=sp.f=Math.round(Math.hypot(w,h));}}
+  else if(to==='free'){sp.walls=pts.map((p,i)=>{const q=pts[(i+1)%pts.length],d=sub(q,p);return {len:Math.round(vlen(d)),deg:Math.round(mod(Math.atan2(-d[1],d[0])/D2R,360)*10)/10};});}
+}
+const sl=$('spaceList');
+sl.addEventListener('input',e=>{
+  const t=e.target,card=t.closest('[data-sid]');if(!card||!t.dataset.k)return;
+  const sp=state.spaces.find(s=>s.id===card.dataset.sid);if(!sp)return;
+  const k=t.dataset.k;let v=t.type==='checkbox'?t.checked:t.value;
+  if(t.type==='number')v=num(v);
+  if(t.dataset.oi!==undefined){sp.obstacles[+t.dataset.oi][k]=v;}
+  else if(t.dataset.wi!==undefined){const w=sp.walls[+t.dataset.wi];
+    if(k==='dir'){if(v==='c'){w.custom=true;}else{w.deg=num(v);w.custom=false;}renderSpaces();}
+    else if(k==='deg'){w.deg=num(v);}else w[k]=v;}
+  else{
+    if(k==='shape'){seedShape(sp,v);sp.shape=v;renderSpaces();}
+    else if(k==='rot'){sp.rot=num(v);}
+    else sp[k]=v;
+  }
+  schedule();
+});
+sl.addEventListener('toggle',e=>{const d=e.target;if(d.matches&&d.matches('details.space')&&d.open){ui.sel=d.dataset.sid;schedule();}},true);
+sl.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;const card=b.closest('[data-sid]');const sp=state.spaces.find(s=>s.id===card.dataset.sid);if(!sp)return;
+  const a=b.dataset.act;
+  if(a==='addWall'){const last=sp.walls[sp.walls.length-1];sp.walls.push({len:1000,deg:last?mod(num(last.deg)-90,360):0});}
+  if(a==='delWall')sp.walls.splice(+b.dataset.wi,1);
+  if(a==='addObs'){const k=card.querySelector('[data-obspreset]').value,[nm,w,h]=OBS_PRESETS[k];sp.obstacles.push({name:nm,x:0,y:0,w,h});}
+  if(a==='delObs')sp.obstacles.splice(+b.dataset.oi,1);
+  if(a==='dup'){const c=JSON.parse(JSON.stringify(sp));c.id=uid();c.name=sp.name+' (kopie)';const S=geo.ok.find(S=>S.sp===sp);c.x=num(sp.x)+(S?S.bb.x1-S.bb.x0:1000);state.spaces.push(c);ui.sel=c.id;}
+  if(a==='del'){if(!confirm(`“${sp.name}” verwijderen?`))return;state.spaces=state.spaces.filter(s=>s!==sp);ui.sel=state.spaces[0]?.id||null;}
+  renderSpaces();schedule();
+});
+$('btnAddSpace').addEventListener('click',()=>{
+  const kind=$('addPreset').value,sp=SPACE_DEF();
+  const b=geo&&geo.ok.length?geo.bb:{x0:0,y0:0,x1:0,y1:0};sp.x=Math.round(b.x1);sp.y=Math.round(b.y0);
+  if(kind==='kamer'){sp.name='Kamer';sp.w=3500;sp.h=4000;}
+  if(kind==='gang'){sp.name='Gang';sp.w=1100;sp.h=4000;sp.doors=3;}
+  if(kind==='keuken'){sp.name='Keuken';sp.w=3000;sp.h=3200;sp.obstacles=[{name:'Keukenblok',x:0,y:0,w:3000,h:620}];}
+  if(kind==='L'){sp.name='L-ruimte';sp.shape='L';sp.w=5000;sp.h=4500;sp.cw=2000;sp.ch=1800;}
+  if(kind==='quad'){sp.name='Scheve kamer';sp.shape='quad';sp.a=3500;sp.b=4000;sp.c=3560;sp.d=4010;sp.e=5300;sp.f=0;}
+  if(kind==='free'){sp.name='Vrije vorm';sp.shape='free';sp.walls=[{len:4000,deg:0},{len:2000,deg:270},{len:1500,deg:180},{len:2500,deg:270},{len:2500,deg:180}];}
+  state.spaces.push(sp);ui.sel=sp.id;renderSpaces();schedule();
+  setMode('move');toast('Sleep de nieuwe ruimte op zijn plek');
+});
+
+/* ================= projecten ================= */
+function getProjects(){try{return JSON.parse(localStorage.getItem(LS_PROJ))||{};}catch(e){return {};}}
+function setProjects(p){try{localStorage.setItem(LS_PROJ,JSON.stringify(p));}catch(e){toast('Opslaan lukt niet in deze browser');}}
+function renderProjects(){const p=getProjects(),ks=Object.keys(p).sort();
+  $('projList').innerHTML=ks.length?ks.map(k=>`<div class="projitem"><b>${esc(k)}</b><span class="hint" style="margin:0">${nl2((p[k]._net||0))} m²</span><button class="btn sm" data-load="${esc(k)}" type="button">Openen</button><button class="btn sm danger" data-delp="${esc(k)}" type="button">×</button></div>`).join(''):`<div class="hint">Nog geen opgeslagen projecten.</div>`;}
+$('projList').addEventListener('click',e=>{const l=e.target.closest('[data-load]'),d=e.target.closest('[data-delp]');const p=getProjects();
+  if(l){state=migrate(p[l.dataset.load]);afterLoad();toast('Project geopend');}
+  if(d&&confirm(`Project “${d.dataset.delp}” verwijderen?`)){delete p[d.dataset.delp];setProjects(p);renderProjects();}});
+$('btnSave').addEventListener('click',()=>{const name=(prompt('Naam van het project:',state.name||'')||'').trim();if(!name)return;state.name=name;const p=getProjects();p[name]={...JSON.parse(JSON.stringify(state)),_net:geo.net/1e6};setProjects(p);syncBinds();renderProjects();save();toast('Opgeslagen');});
+$('btnNew').addEventListener('click',()=>{if(!confirm('Nieuw project beginnen? Het huidige blijft bewaard als je het hebt opgeslagen.'))return;state=DEFAULT();afterLoad();});
+$('btnExport').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(state,null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(state.name||'vloer').replace(/[^\w\- ]+/g,'')+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);});
+$('fileImport').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{try{state=migrate(JSON.parse(t));afterLoad();toast('Project geïmporteerd');}catch(err){toast('Dit bestand kan ik niet lezen');}});e.target.value='';});
+function shareLink(){const s=btoa(unescape(encodeURIComponent(JSON.stringify(state))));const url=location.href.split('#')[0]+'#p='+s;
+  (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(()=>toast('Deel-link gekopieerd'),()=>{prompt('Kopieer deze link:',url);});}
+$('btnShare').addEventListener('click',shareLink);$('btnShare2').addEventListener('click',shareLink);
+$('btnPrint').addEventListener('click',()=>window.print());
+$('btnCopy').addEventListener('click',()=>{(navigator.clipboard?navigator.clipboard.writeText(res.matText):Promise.reject()).then(()=>toast('Bestellijst gekopieerd'),()=>prompt('Kopieer:',res.matText));});
+function afterLoad(){ui.sel=state.spaces[0]?.id||null;renderSpaces();syncBinds();recompute();renderProjects();}
+
+window.addEventListener('resize',()=>schedule());
+renderSpaces();syncBinds();setMode('hart');recompute();
+</script>
+</body>
+</html>
